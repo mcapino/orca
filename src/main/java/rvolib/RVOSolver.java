@@ -21,8 +21,6 @@ public class RVOSolver {
     private float goal_epsilon1 = 1;
     private float goal_epsilon2;// 0.1f;
 
-    private double simulationSpeed = 100;
-
     private ArrayList<Vector2> goals;
     private float graphRadius;
 
@@ -97,11 +95,12 @@ public class RVOSolver {
             }
             Simulator.getInstance().doStep();
 
-            try {
-                Thread.sleep((long) simulationSpeed);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            // HARDCODED SIMULATION SPEED
+            //try {
+            //    Thread.sleep((long) simulationSpeed);
+            //} catch (InterruptedException e) {
+            //    e.printStackTrace();
+            //}
 
             iteration++;
 //			 System.out.println(iteration);
