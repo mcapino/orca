@@ -18,18 +18,20 @@ import java.util.Map.Entry;
 
 public class RVOSolver {
 
-    private float goal_epsilon1 = 1;
-    private float goal_epsilon2;// 0.1f;
+	/** Somewhere near goal the agent must adjust the preferred velocity to avoid overshooting **/
+    private float adjustPrefferedVolcityNearGoalEpsilon = 1;
+    /**	The agent is considered at goal if the distance between its current position and the goal is within this tolerance **/
+    private float goalReachedToleranceEpsilon; // 0.1f;
 
     private ArrayList<Vector2> goals;
     private float graphRadius;
 
-    private outerLoopControl control = outerLoopControl.VISIBILITY_GRAPH;
+    private outerLoopControl preferredVelocityControlerMethod = outerLoopControl.VISIBILITY_GRAPH;
     private VisibilityGraphPlanner visibilityGraphPlanner;
     private Collection<Region> obstacles;
     private Collection<Region> inflatedObstacles;
     private int iteration;
-    private EarliestArrivalProblem problem;
+    //private EarliestArrivalProblem problem;
     private Collection<Region> lessInflatedObstacles;
     private float jointCost = 0;
 
@@ -48,9 +50,9 @@ public class RVOSolver {
         this.obstacles = obstacles;
         this.inflatedObstacles = inflatedObstacles;
         this.lessInflatedObstacles = Util.inflateRegions(problem.getObstacles(), problem.getBodyRadius(0) - 1);
-        this.problem = problem;
-        this.goal_epsilon2 = (float) (Math.ceil((double) problem.getBodyRadius(0) / 5));
-        this.goal_epsilon1 = (float) (Math.ceil((double) problem.getBodyRadius(0) / 5));
+
+        this.goalReachedToleranceEpsilon = (float) (Math.ceil((double) problem.getBodyRadius(0) / 5));
+        this.adjustPrefferedVolcityNearGoalEpsilon = (float) (Math.ceil((double) problem.getBodyRadius(0) / 5));
 //		System.out.println(goal_epsilon1 + "," + goal_epsilon2);
     }
 
@@ -69,7 +71,7 @@ public class RVOSolver {
             }
         }
 
-        switch (control) {
+        switch (preferredVelocityControlerMethod) {
             case LAZY_GRID:
                 createGridGraph();
                 break;
@@ -85,7 +87,7 @@ public class RVOSolver {
 
         iteration = 0;
         do {
-            switch (control) {
+            switch (preferredVelocityControlerMethod) {
                 case LAZY_GRID:
                     setLazyGridPreferredVelocities();
                     break;
@@ -183,7 +185,7 @@ public class RVOSolver {
         for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
             Vector2 p = Simulator.getInstance().getAgentPosition(i);
 
-            if (p.convertToPoint2i().distance(goals.get(i).convertToPoint2i()) < goal_epsilon1) {
+            if (p.convertToPoint2i().distance(goals.get(i).convertToPoint2i()) < adjustPrefferedVolcityNearGoalEpsilon) {
                 Simulator.getInstance().setAgentPrefVelocity(i,
                         Vector2.minus(goals.get(i), p));
             } else {
@@ -230,11 +232,13 @@ public class RVOSolver {
     private void setVisibilityGraphPrefferedVelocities() {
         for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
 
-            Vector2 p = Simulator.getInstance().getAgentPosition(i);
+            Vector2 currentPosition = Simulator.getInstance().getAgentPosition(i);
 
-            if (p.convertToPoint2i().distance(goals.get(i).convertToPoint2i()) < goal_epsilon1) {
-
-                Simulator.getInstance().setAgentPrefVelocity(i, new Vector2(0, 0));
+            if (currentPosition.convertToPoint2i().distance(goals.get(i).convertToPoint2i()) < adjustPrefferedVolcityNearGoalEpsilon) {
+            	// TODO compute velocity that gets agent directly to the goal at the next step.
+            	Vector2  directionToGoal = Vector2.minus(goals.get(i), currentPosition);
+            	// TODO continuo here
+            	Simulator.getInstance().setAgentPrefVelocity(i, new Vector2(0, 0));
             } else {
                 HashMap<Point, Double> evaluatedGraph = Simulator.getInstance()
                         .getAgent(i).getEvaluatedGraph();
@@ -249,8 +253,8 @@ public class RVOSolver {
                     double value = (double) pairs.getValue();
                     Point point = (Point) pairs.getKey();
 
-                    Vector2 vector = new Vector2(point.x - p.x(), point.y
-                            - p.y());
+                    Vector2 vector = new Vector2(point.x - currentPosition.x(), point.y
+                            - currentPosition.y());
                     double dist = vector.getLength();
                     double sumDistance = dist + value;
                     double navigationEps = 0.1;
@@ -267,14 +271,14 @@ public class RVOSolver {
                             && !Simulator.getInstance().getAgent(i)
                             .getCloseList().contains(point)) {
                         boolean obstacleConflict = false;
-                        Point pos = p.convertToPoint2i();
+                        Point pos = currentPosition.convertToPoint2i();
                         double eps = Double.MAX_VALUE;
                         // optimalization for maze
                         // double eps = 250;
 
                         for (Region region : lessInflatedObstacles) {
 
-                            if (region.intersectsLine(p.convertToPoint2i(),
+                            if (region.intersectsLine(currentPosition.convertToPoint2i(),
                                     point)) {
                                 obstacleConflict = true;
                                 continue;
@@ -297,7 +301,7 @@ public class RVOSolver {
                     Simulator.getInstance().setAgentPrefVelocity(i, result);
                 } else {
                     Vector2 toGoalVelocity = new Vector2(
-                            goals.get(i).x_ - p.x_, goals.get(i).y_ - p.y_);
+                            goals.get(i).x_ - currentPosition.x_, goals.get(i).y_ - currentPosition.y_);
                     float maxSpeed = Simulator.getInstance().getAgentMaxSpeed();
                     result = Vector2.scale(maxSpeed, toGoalVelocity);
                     Simulator.getInstance().setAgentPrefVelocity(i, result);
@@ -354,7 +358,7 @@ public class RVOSolver {
                     .getAgentPosition(i).convertToPoint2i();
             Point g = goals.get(i).convertToPoint2i();
 
-            if (p.distance(g) > goal_epsilon2) {
+            if (p.distance(g) > goalReachedToleranceEpsilon) {
                 return false;
             }
         }

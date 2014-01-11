@@ -105,9 +105,9 @@ public class Simulator {
         }
 
         defaultAgent_.maxNeighbors_ = maxNeighbors;
-        defaultAgent_.maxSpeed_ = maxSpeed;
-        defaultAgent_.neighborDist_ = neighborDist;
-        defaultAgent_.radius_ = radius;
+        defaultAgent_.maxSpeed_ = maxSpeed; 
+        defaultAgent_.neighborDist_ = neighborDist; // probably the distance at which the neighboring agents are registered
+        defaultAgent_.radius_ = radius; //
         defaultAgent_.timeHorizon_ = timeHorizon;
         defaultAgent_.timeHorizonObst_ = timeHorizonObst;
         defaultAgent_.velocity_ = velocity;
