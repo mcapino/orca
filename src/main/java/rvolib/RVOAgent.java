@@ -13,22 +13,37 @@ import java.util.List;
 
 public class RVOAgent {
 
+	/** probably: agents in the neighborhood **/
     private ArrayList<SimpleEntry<Float, RVOAgent>> agentNeighbors_ = new ArrayList<SimpleEntry<Float, RVOAgent>>();
+    /** probably: the maximum number of neighbors the algorithm considers for collision avoidance **/
     public int maxNeighbors_ = 0;
+    /** probably: the maximum speed the agent can move at **/
     public float maxSpeed_ = 0.0f;
+    /** probably: probably the distance at which are the neighboring agents and obstacles registered **/
     public float neighborDist_ = 0.0f;
+    /** probably: the velocity taken after collision avoidance **/
     private Vector2 newVelocity_ = new Vector2();
+    /** probably: obstacles in the neighborhood **/
     private List<SimpleEntry<Float, RVOObstacle>> obstacleNeighbors_ = new ArrayList<SimpleEntry<Float, RVOObstacle>>();
+    /** probably: ORCA lines represent constraints on the linear programming problem that searches for the optimal velocity vector **/
     public ArrayList<RVOLine> orcaLines_ = new ArrayList<RVOLine>();
+    /** probably: position of the agent **/
     public Vector2 position_;
+    /** probably: the agents preferred velocity, if the agent doesn't need to perform collision avoidance, it will follow this velocity vector **/
     public Vector2 prefVelocity_;
+    /** probably: the radius of the agent **/
     public float radius_ = 0.0f;
+    /** probably: time-horizon of collision avoidance, if the collision is predicted after the time horizon, it is ignored **/
     public float timeHorizon_ = 0.0f;
+    /** probably: time-horizon of collision avoidance with obstacles, if the collision is predicted after the time horizon, it is ignored **/
     public float timeHorizonObst_ = 0.0f;
     public Vector2 velocity_;
     public int id_ = 0;
+    /** sequence of points that will be used to construct trajectory **/
     public ArrayList<Point> trajectory = new ArrayList<>();
+    /** currently not used: grid-graph that is used to find the shortest path from agent's current position to the goal position **/
     private LazyGrid graph;
+    /**	vertices of the visibility graph, the values represent the cost of the path from each point to the goal **/
     private HashMap<Point, Double> evaluatedGraph = new HashMap<>();
     private ArrayList<Point> closeList = new ArrayList<Point>();
     public boolean showVis = true;
