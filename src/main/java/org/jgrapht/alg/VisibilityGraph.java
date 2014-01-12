@@ -15,10 +15,8 @@ import java.util.Collection;
 
 public class VisibilityGraph {
 
-    public static WeightedGraph<Point, Line> createVisibilityGraph(Collection<Region> obstacles, int inflateBy) {
-
-    	Collection<Region> inflatedObstacles = Util.inflateRegions(
-                obstacles, inflateBy);
+    public static WeightedGraph<Point, Line> createVisibilityGraph(Collection<Region> lessInflatedObstacles,
+    		Collection<Region> moreInflatedObstacles) {
 
         @SuppressWarnings("serial")
 		WeightedGraph<Point, Line> visibilityGraph = new SimpleWeightedGraph<Point, Line>(new EdgeFactory<Point, Line>() {
@@ -42,13 +40,13 @@ public class VisibilityGraph {
 			}
         };
 
-        for (Region inflatedObstacle : inflatedObstacles) {
+        for (Region inflatedObstacle : moreInflatedObstacles) {
             Polygon polygon = (Polygon) inflatedObstacle;
             Point[] points = polygon.getPoints();
 
             // add points
             for (int i = 0; i < points.length; i++) {
-            	 if (!conflicting(inflatedObstacles, points[i])) {
+            	 if (!conflicting(lessInflatedObstacles, points[i])) {
             		 visibilityGraph.addVertex(points[i]);
                  }
             }
@@ -58,7 +56,7 @@ public class VisibilityGraph {
 
         for (int i=0; i < vertices.length; i++) {
         	for (int j=i+1; j < vertices.length; j++) {
-        		if (!conflicting(obstacles, vertices[i], vertices[j])) {
+        		if (!conflicting(lessInflatedObstacles, vertices[i], vertices[j])) {
 
         			 if (!vertices[i].equals(vertices[j]) && visibilityGraph.containsVertex(vertices[i])
         		                && visibilityGraph.containsVertex(vertices[j])) {

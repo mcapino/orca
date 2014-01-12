@@ -24,7 +24,8 @@ public class OptimalSolutionProvider {
     private static OptimalSolutionProvider instance = new OptimalSolutionProvider();
     private EarliestArrivalProblem problem;
     private double agentMaxSpeed;
-    private Collection<Region> inflatedObstacles;
+    private Collection<Region> lessInflatedObstacles;
+    private Collection<Region> moreInflatedObstacles;
     private int optimalSolutionCost;
     private boolean isInitialized = false;
     private ArrayList<Long> extensionRunTimes;
@@ -36,11 +37,12 @@ public class OptimalSolutionProvider {
     public OptimalSolutionProvider() {
     }
 
-    public void init(EarliestArrivalProblem problem, double agentMaxSpeed, Collection<Region> inflatedObstacles) {
+    public void init(EarliestArrivalProblem problem, double agentMaxSpeed, Collection<Region> lessInflatedObstacles, Collection<Region> moreInflatedObstacles) {
         trajectories = new EvaluatedTrajectory[problem.nAgents()];
         this.problem = problem;
         this.agentMaxSpeed = agentMaxSpeed;
-        this.inflatedObstacles = inflatedObstacles;
+        this.lessInflatedObstacles = lessInflatedObstacles;
+        this.moreInflatedObstacles = moreInflatedObstacles;
         this.optimalSolutionCost = calculateFeasibleOptimisticSolution();
         extensionRunTimes = new ArrayList<>();
 
@@ -106,10 +108,10 @@ public class OptimalSolutionProvider {
         for (int i = 0; i < problem.nAgents(); i++) {
             goalList.add(goals[i]);
         }
-        WeightedGraph<Point, Line> visGraph = VisibilityGraph.createVisibilityGraph(inflatedObstacles, 1);
+        WeightedGraph<Point, Line> visGraph = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles);
 
         VisibilityGraphPlanner visibilityGraphPlanner = new VisibilityGraphPlanner(visGraph,
-                inflatedObstacles, false);
+                lessInflatedObstacles, false);
 
         ArrayList<GraphPath<Point, Line>> shortestPaths = new ArrayList<>();
 
@@ -140,7 +142,6 @@ public class OptimalSolutionProvider {
 
     private EvaluatedTrajectory calculateTrajectory(
             GraphPath<Point, Line> shortestPath, int maxSpeed) {
-
 
         ArrayList<Point> trajectory = new ArrayList<Point>();
 

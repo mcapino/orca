@@ -51,16 +51,18 @@ public class VisibilityGraphLayer {
             public Iterable<? extends StyledLine> getLines() {
                 ArrayList<StyledLine> lines = new ArrayList<StyledLine>();
 
-                Color color = Color.BLUE;
+                Color color = Color.LIGHT_GRAY;
 
                 WeightedGraph<Point, Line> graph = planner.getGraph();
-                Set<Line> edges = graph.edgeSet();
-                for (Line line : edges) {
-                    Point start = graph.getEdgeSource(line);
-                    Point3d start3d = new Point3d(start.x, start.y, 0);
-                    Point end = graph.getEdgeTarget(line);
-                    Point3d end3d = new Point3d(end.x, end.y, 0);
-                    lines.add(new StyledLineImpl(start3d, end3d, color, 2));
+                if (graph != null) {
+	                Set<Line> edges = graph.edgeSet();
+	                for (Line line : edges) {
+	                    Point start = graph.getEdgeSource(line);
+	                    Point3d start3d = new Point3d(start.x, start.y, 0);
+	                    Point end = graph.getEdgeTarget(line);
+	                    Point3d end3d = new Point3d(end.x, end.y, 0);
+	                    lines.add(new StyledLineImpl(start3d, end3d, color, 1));
+	                }
                 }
 
                 return lines;

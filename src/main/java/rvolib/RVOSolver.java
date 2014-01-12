@@ -13,7 +13,6 @@ import tt.euclid2i.discretization.LazyGrid;
 import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
 import tt.jointtraj.solver.SearchResult;
-import tt.util.Verbose;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -31,9 +30,9 @@ public class RVOSolver {
     private outerLoopControl preferredVelocityControlerMethod = outerLoopControl.VISIBILITY_GRAPH;
     private VisibilityGraphPlanner visibilityGraphPlanner;
     private Collection<Region> obstacles;
-    private Collection<Region> inflatedObstacles;
-    private int iteration;
+    private Collection<Region> moreInflatedObstacles;
     private Collection<Region> lessInflatedObstacles;
+    private int iteration;
     private float jointCost = 0;
     private boolean showProgress;
 
@@ -72,18 +71,15 @@ public class RVOSolver {
         // ADD AGENTS
         for (int i = 0; i < starts.length; i++) {
             Vector2 start = new Vector2(starts[i]);
-
             simulator.addAgent(start);
             simulator.getAgent(i).goal_ = goals[i];
         }
 
-
         this.graphRadius = 1000;// 2 * conflictRadius + 50;
         // VisManager.registerLayer(SimulationControlLayer.create(this));
         this.obstacles = obstacles;
-        this.inflatedObstacles = Util.inflateRegions(obstacles, bodyRadius);
         this.lessInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius-1);
-
+        this.moreInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius);
 
         //this.goalReachedToleranceEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
         //this.adjustPrefferedVolcityNearGoalEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
@@ -174,9 +170,9 @@ public class RVOSolver {
     }
 
     private void createVisibilityGraphController() {
-    	WeightedGraph<Point, Line> visibilityGraphAroundObstacles = VisibilityGraph.createVisibilityGraph(inflatedObstacles, 1);
-        for (int i = 0; i < simulator.getNumAgents(); ++i) {
-            visibilityGraphPlanner = new VisibilityGraphPlanner(visibilityGraphAroundObstacles, inflatedObstacles, true);
+    	WeightedGraph<Point, Line> visibilityGraphAroundObstacles = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles);
+        for (int i = 0; i < simulator.getNumAgents(); i++) {
+            visibilityGraphPlanner = new VisibilityGraphPlanner(visibilityGraphAroundObstacles, lessInflatedObstacles, true);
             visibilityGraphPlanner.createVisibilityGraph(goals[i]);
             simulator.getAgent(i).setEvaluatedGraph(
             		visibilityGraphPlanner.evaluateGraph(i, 10 * graphRadius,
