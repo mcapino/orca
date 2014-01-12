@@ -13,6 +13,7 @@ import tt.euclid2i.discretization.LazyGrid;
 import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
 import tt.jointtraj.solver.SearchResult;
+import tt.util.Verbose;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -34,20 +35,25 @@ public class RVOSolver {
     private int iteration;
     private Collection<Region> lessInflatedObstacles;
     private float jointCost = 0;
+    private boolean showProgress;
 
     Simulator simulator;
 	public RVOSolver(Point[] starts, Point[] goals, int bodyRadius,
                      Collection<Region> obstacles,
                      float timeStep, float neighborDist,
                      int maxNeighbors, float deconflictionTimeHorizonAgents,
-                     float deconflictionTimeHorizonObstacles, float maxSpeed) {
-        this.simulator = new Simulator();
+                     float deconflictionTimeHorizonObstacles, float maxSpeed, boolean showProgress) {
+
+		this.showProgress = showProgress;
+		this.simulator = new Simulator();
+		this.simulator.setShowVis(showProgress);
 
         simulator.setTimeStep(timeStep);
 
         Vector2 initialVelocity = new Vector2();
         simulator.setAgentDefaults(neighborDist, maxNeighbors, deconflictionTimeHorizonAgents, deconflictionTimeHorizonObstacles,
-        		bodyRadius, maxSpeed, initialVelocity );
+        		bodyRadius, maxSpeed, initialVelocity);
+
 
         // ADD OBSTACLES
         for (Region region : obstacles) {
@@ -77,6 +83,7 @@ public class RVOSolver {
         this.obstacles = obstacles;
         this.inflatedObstacles = Util.inflateRegions(obstacles, bodyRadius);
         this.lessInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius-1);
+
 
         //this.goalReachedToleranceEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
         //this.adjustPrefferedVolcityNearGoalEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
@@ -122,11 +129,14 @@ public class RVOSolver {
             simulator.doStep();
 
             // HARDCODED SIMULATION SPEED
-//            try {
-//                Thread.sleep((long) 1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
+
+            if (showProgress) {
+	            try {
+	                Thread.sleep((long) 10);
+	            } catch (InterruptedException e) {
+	                e.printStackTrace();
+	            }
+            }
 
             iteration++;
 //			System.out.println(iteration);
@@ -135,7 +145,7 @@ public class RVOSolver {
 //			System.out.println("threshold: " + maxJointCost + " optimal solution cost: " + OptimalSolutionProvider.getInstance().getOptimalSolutionCost() + " cost: " + jointCost);
 
             if (System.nanoTime() > interruptAtNs) {
-                return new SearchResult(trajs, false);
+                return new SearchResult(null, false);
             }
 
         } while (!reachedGoal() && iteration < iterationLimit && jointCost <= maxJointCost);

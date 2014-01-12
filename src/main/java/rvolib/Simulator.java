@@ -205,5 +205,8 @@ public class Simulator {
         return defaultAgent_.maxSpeed_;
     }
 
+    public void setShowVis(boolean showVis) {
+		this.showVis = showVis;
+	}
 
 }
