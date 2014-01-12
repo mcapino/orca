@@ -12,17 +12,18 @@ public class RVOTrajectory implements EvaluatedTrajectory {
     private int cost;
     private float timeStep;
     private Point goal;
+	private int maxTime;
 
-    public RVOTrajectory(ArrayList<Point> listOfPoints, float timeStep, Point goal) {
+    public RVOTrajectory(ArrayList<Point> listOfPoints, float timeStep, Point goal, int maxTime) {
         this.goal = goal;
         this.listOfPoints = listOfPoints;
         this.timeStep = timeStep;
+        this.maxTime = maxTime;
         determineCost();
     }
 
     private void determineCost() {
         int pointsOutsideGoal = 0;
-//		Point goal = listOfPoints.get(listOfPoints.size() - 1);
         for (int i = 0; i < listOfPoints.size(); i++) {
             if (!listOfPoints.get(i).equals(goal)) {
                 pointsOutsideGoal++;
@@ -47,15 +48,22 @@ public class RVOTrajectory implements EvaluatedTrajectory {
 
     @Override
     public int getMaxTime() {
-        return listOfPoints.size() - 1;
+        return maxTime;
     }
 
     @Override
     public Point get(int t) {
-        if (t >= listOfPoints.size() || t < 0) {
-            return null;
+        if ( t >= 0 && t <= maxTime) {
+        	int i = (int) ((float)t / timeStep);
+        	if (i <= listOfPoints.size()-1) {
+        		return listOfPoints.get(i);
+        	} else {
+        		return getLast();
+        	}
+        } else {
+        	return null;
         }
-        return listOfPoints.get(t);
+
     }
 
     public Point getLast() {
@@ -66,16 +74,8 @@ public class RVOTrajectory implements EvaluatedTrajectory {
         return listOfPoints;
     }
 
-    public void addAll(RVOTrajectory evaluatedTrajectory) {
-        listOfPoints.addAll(evaluatedTrajectory.getListOfPoints());
-    }
-
     public float getTimeStep() {
         return timeStep;
-    }
-
-    public void setTimeStep(float timeStep) {
-        this.timeStep = timeStep;
     }
 
 }

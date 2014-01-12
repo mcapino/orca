@@ -170,7 +170,7 @@ public class OptimalSolutionProvider {
             }
             edgeStart = edgeEnd;
         }
-        EvaluatedTrajectory traj = new RVOTrajectory(trajectory, 1, shortestPath.getEndVertex());
+        EvaluatedTrajectory traj = new RVOTrajectory(trajectory, 1, shortestPath.getEndVertex(), trajectory.size());
         return traj;
     }
 

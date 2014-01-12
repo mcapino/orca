@@ -520,8 +520,8 @@ public class RVOAgent {
         // System.out.println(this.id_+" new position: "+position_.toString());
     }
 
-    public EvaluatedTrajectory getEvaluatedTrajectory(float timeStep, Point goal) {
-        return new RVOTrajectory(trajectory, timeStep, goal);
+    public EvaluatedTrajectory getEvaluatedTrajectory(float timeStep, Point goal, int maxTime) {
+        return new RVOTrajectory(trajectory, timeStep, goal, maxTime);
     }
 
     boolean linearProgram1(ArrayList<RVOLine> lines, int lineNo, float radius,

@@ -20,9 +20,9 @@ import java.util.Map.Entry;
 public class RVOSolver {
 
 	/** Somewhere near goal the agent must adjust the preferred velocity to avoid overshooting **/
-    private float adjustPrefferedVolcityNearGoalEpsilon = 1;
+    private float adjustPrefferedVolcityNearGoalEpsilon = 0;
     /**	The agent is considered at goal if the distance between its current position and the goal is within this tolerance **/
-    private float goalReachedToleranceEpsilon; // 0.1f;
+    private float goalReachedToleranceEpsilon = 0; // 0.1f;
 
     private Point[] goals;
     private float graphRadius;
@@ -32,7 +32,6 @@ public class RVOSolver {
     private Collection<Region> obstacles;
     private Collection<Region> inflatedObstacles;
     private int iteration;
-    //private EarliestArrivalProblem problem;
     private Collection<Region> lessInflatedObstacles;
     private float jointCost = 0;
 
@@ -72,14 +71,6 @@ public class RVOSolver {
             simulator.getAgent(i).goal_ = goals[i];
         }
 
-        // Compute visibility graph
-
-
-
-//        simulator.setAgentDefaults(100, 10, 100.0f, 100.0f,
-//                problem.getBodyRadius(0), (float) problem.getMaxSpeed(0),
-//                new Vector2());
-
 
         this.graphRadius = 1000;// 2 * conflictRadius + 50;
         // VisManager.registerLayer(SimulationControlLayer.create(this));
@@ -87,9 +78,8 @@ public class RVOSolver {
         this.inflatedObstacles = Util.inflateRegions(obstacles, bodyRadius);
         this.lessInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius-1);
 
-        this.goalReachedToleranceEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
-        this.adjustPrefferedVolcityNearGoalEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
-//		System.out.println(goal_epsilon1 + "," + goal_epsilon2);
+        //this.goalReachedToleranceEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
+        //this.adjustPrefferedVolcityNearGoalEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
     }
 
     public SearchResult solve(int iterationLimit, long interruptAtNs, double maxJointCost) {
@@ -132,27 +122,26 @@ public class RVOSolver {
             simulator.doStep();
 
             // HARDCODED SIMULATION SPEED
-            //try {
-            //    Thread.sleep((long) simulationSpeed);
-            //} catch (InterruptedException e) {
-            //    e.printStackTrace();
-            //}
+//            try {
+//                Thread.sleep((long) 1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
 
             iteration++;
-//			 System.out.println(iteration);
+//			System.out.println(iteration);
 
             calculateJointCost();
 //			System.out.println("threshold: " + maxJointCost + " optimal solution cost: " + OptimalSolutionProvider.getInstance().getOptimalSolutionCost() + " cost: " + jointCost);
 
             if (System.nanoTime() > interruptAtNs) {
-
                 return new SearchResult(trajs, false);
             }
 
         } while (!reachedGoal() && iteration < iterationLimit && jointCost <= maxJointCost);
 
         for (int i = 0; i < trajs.length; i++) {
-            trajs[i] = simulator.getAgent(i).getEvaluatedTrajectory(simulator.timeStep_, goals[i]);
+            trajs[i] = simulator.getAgent(i).getEvaluatedTrajectory(simulator.timeStep_, goals[i], (int) Math.ceil(iterationLimit * simulator.timeStep_));
         }
         if (iteration < iterationLimit && jointCost <= maxJointCost) {
             // System.out.println("RVO SUCCESS");
@@ -264,18 +253,10 @@ public class RVOSolver {
         for (int i = 0; i < simulator.getNumAgents(); ++i) {
 
             Vector2 currentPosition = simulator.getAgentPosition(i);
-
-            //if (currentPosition.convertToPoint2i().distance(goals[i]) < )
+            double distanceToGoal = currentPosition.convertToPoint2i().distance(goals[i]);
 
 
             if (currentPosition.convertToPoint2i().distance(goals[i]) < adjustPrefferedVolcityNearGoalEpsilon) {
-            	// TODO compute velocity that gets agent directly to the goal at the next step.
-            	Vector2  directionToGoal = Vector2.minus(new Vector2(goals[i]), currentPosition);
-            	// normalize directionToGoal
-
-            	// check if normalize directionToGoal * iterationStep
-            	//directionToGoal.
-
             	simulator.setAgentPrefVelocity(i, new Vector2(0, 0));
             } else {
                 HashMap<Point, Double> evaluatedGraph = simulator
@@ -285,7 +266,6 @@ public class RVOSolver {
                         .iterator();
                 double minDistance = Double.MAX_VALUE;
                 Vector2 result = null;
-                Point resPoint = null;
                 while (it.hasNext()) {
                     Map.Entry pairs = (Map.Entry) it.next();
                     double value = (double) pairs.getValue();
@@ -315,35 +295,39 @@ public class RVOSolver {
                         // double eps = 250;
 
                         for (Region region : lessInflatedObstacles) {
-
                             if (region.intersectsLine(currentPosition.convertToPoint2i(),
                                     point)) {
                                 obstacleConflict = true;
                                 continue;
                             }
-
                         }
                         if (!obstacleConflict) {
                             result = vector;
                             minDistance = sumDistance;
-                            resPoint = point;
-
                         }
                     }
                 }
 
-                if (result != null) {
+				if (result != null) {
                     result = RVOMath.normalize(result);
                     float maxSpeed = simulator.getAgentMaxSpeed();
-                    result = Vector2.scale(maxSpeed, result);
+
+                    if (distanceToGoal > simulator.timeStep_ * maxSpeed) {
+                    	// it will take some time to reach the goal
+                    	result = Vector2.scale(maxSpeed, result);
+                    } else {
+                    	// goal will be reached in the next time step
+                    	double speed = distanceToGoal/maxSpeed;
+                    	result = Vector2.scale((float)speed, result);
+                    }
+
                     simulator.setAgentPrefVelocity(i, result);
                 } else {
-                    Vector2 toGoalVelocity = new Vector2(
+                    Vector2 toGoalVelocityVector = new Vector2(
                             goals[i].x - currentPosition.x_, goals[i].y - currentPosition.y_);
                     float maxSpeed = simulator.getAgentMaxSpeed();
-                    result = Vector2.scale(maxSpeed, toGoalVelocity);
+                   	result = Vector2.scale(maxSpeed, toGoalVelocityVector);
                     simulator.setAgentPrefVelocity(i, result);
-
                 }
             }
         }

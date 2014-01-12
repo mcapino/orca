@@ -8,10 +8,7 @@ import java.util.LinkedList;
 
 public class Simulator {
 
-
-    private static Simulator instance_ = new Simulator();
-
-    private ArrayList<RVOAgent> agents_;
+	private ArrayList<RVOAgent> agents_;
     public ArrayList<RVOObstacle> obstacles_;
     private float time_;
     public RVOAgent defaultAgent_;
@@ -20,9 +17,7 @@ public class Simulator {
 
     private Collection<Region> rectangleObstacles = new LinkedList<Region>();
 
-//    public static Simulator getInstance() {
-//        return instance_;
-//    }
+	private boolean showVis = false;
 
     Simulator() {
         agents_ = new ArrayList<RVOAgent>();
@@ -31,7 +26,6 @@ public class Simulator {
         defaultAgent_ = null;
         kdTree_ = new KdTree();
         timeStep_ = .1f;
-
     }
 
     public float getGlobalTime() {
@@ -87,7 +81,8 @@ public class Simulator {
         agent.velocity_ = defaultAgent_.velocity_;
 
         agent.id_ = agents_.size();
-        agent.initVisualization();
+        if (showVis )
+        	agent.initVisualization();
         agents_.add(agent);
 
         return agents_.size() - 1;
