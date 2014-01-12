@@ -1,6 +1,8 @@
 package rvolib;
 
+import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPaths;
+import org.jgrapht.alg.VisibilityGraph;
 import org.jgrapht.alg.VisibilityGraphPlanner;
 import org.jgrapht.util.Goal;
 import rrt.JointWaypointState;
@@ -10,7 +12,6 @@ import tt.euclid2i.Region;
 import tt.euclid2i.discretization.LazyGrid;
 import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
-import tt.jointeuclid2ni.probleminstance.EarliestArrivalProblem;
 import tt.jointtraj.solver.SearchResult;
 
 import java.util.*;
@@ -23,7 +24,7 @@ public class RVOSolver {
     /**	The agent is considered at goal if the distance between its current position and the goal is within this tolerance **/
     private float goalReachedToleranceEpsilon; // 0.1f;
 
-    private ArrayList<Vector2> goals;
+    private Point[] goals;
     private float graphRadius;
 
     private outerLoopControl preferredVelocityControlerMethod = outerLoopControl.VISIBILITY_GRAPH;
@@ -35,36 +36,69 @@ public class RVOSolver {
     private Collection<Region> lessInflatedObstacles;
     private float jointCost = 0;
 
-    public RVOSolver(ArrayList<Vector2> goals,
-                     Collection<Region> obstacles, Collection<Region> inflatedObstacles,
-                     EarliestArrivalProblem problem) {
-        this.goals = goals;
-        if (goals != null) {
-            for (int i = 0; i < Simulator.getInstance().getNumAgents(); i++) {
-                Simulator.getInstance().getAgent(i).goal_ = goals.get(i)
-                        .convertToPoint2i();
+    Simulator simulator;
+	public RVOSolver(Point[] starts, Point[] goals, int bodyRadius,
+                     Collection<Region> obstacles,
+                     float timeStep, float neighborDist,
+                     int maxNeighbors, float deconflictionTimeHorizonAgents,
+                     float deconflictionTimeHorizonObstacles, float maxSpeed) {
+        this.simulator = new Simulator();
+
+        simulator.setTimeStep(timeStep);
+
+        Vector2 initialVelocity = new Vector2();
+        simulator.setAgentDefaults(neighborDist, maxNeighbors, deconflictionTimeHorizonAgents, deconflictionTimeHorizonObstacles,
+        		bodyRadius, maxSpeed, initialVelocity );
+
+        // ADD OBSTACLES
+        for (Region region : obstacles) {
+            if (!(region instanceof Rectangle)) {
+                region = region.getBoundingBox();
             }
+            ArrayList<Vector2> obstacle = regionToVectorList((Rectangle) region);
+            simulator.addObstacle(obstacle);
+
         }
+
+        simulator.processObstacles();
+
+        this.goals = goals;
+
+        // ADD AGENTS
+        for (int i = 0; i < starts.length; i++) {
+            Vector2 start = new Vector2(starts[i]);
+
+            simulator.addAgent(start);
+            simulator.getAgent(i).goal_ = goals[i];
+        }
+
+        // Compute visibility graph
+
+
+
+//        simulator.setAgentDefaults(100, 10, 100.0f, 100.0f,
+//                problem.getBodyRadius(0), (float) problem.getMaxSpeed(0),
+//                new Vector2());
+
+
         this.graphRadius = 1000;// 2 * conflictRadius + 50;
         // VisManager.registerLayer(SimulationControlLayer.create(this));
         this.obstacles = obstacles;
-        this.inflatedObstacles = inflatedObstacles;
-        this.lessInflatedObstacles = Util.inflateRegions(problem.getObstacles(), problem.getBodyRadius(0) - 1);
+        this.inflatedObstacles = Util.inflateRegions(obstacles, bodyRadius);
+        this.lessInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius-1);
 
-        this.goalReachedToleranceEpsilon = (float) (Math.ceil((double) problem.getBodyRadius(0) / 5));
-        this.adjustPrefferedVolcityNearGoalEpsilon = (float) (Math.ceil((double) problem.getBodyRadius(0) / 5));
+        this.goalReachedToleranceEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
+        this.adjustPrefferedVolcityNearGoalEpsilon = (float) (Math.ceil((double) bodyRadius / 5));
 //		System.out.println(goal_epsilon1 + "," + goal_epsilon2);
     }
 
     public SearchResult solve(int iterationLimit, long interruptAtNs, double maxJointCost) {
 
-        tt.euclid2i.EvaluatedTrajectory[] trajs = new tt.euclid2i.EvaluatedTrajectory[Simulator
-                .getInstance().getNumAgents()];
+        tt.euclid2i.EvaluatedTrajectory[] trajs = new tt.euclid2i.EvaluatedTrajectory[simulator.getNumAgents()];
 
-        for (Vector2 goal : goals) {
-            Point p = goal.convertToPoint2i();
+        for (Point goal : goals) {
             for (Region r : obstacles) {
-                if (r.isInside(p)) {
+                if (r.isInside(goal)) {
                     // System.out.println("RVO FAILURE");
                     return new SearchResult(trajs, false);
                 }
@@ -73,16 +107,16 @@ public class RVOSolver {
 
         switch (preferredVelocityControlerMethod) {
             case LAZY_GRID:
-                createGridGraph();
+                createGridGraphController();
                 break;
             case VISIBILITY_GRAPH:
-                createVisibilityGraph();
+            	createVisibilityGraphController();
                 break;
         }
 
-        for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
-            Simulator.getInstance().getAgent(i).clearTrajectory();
-            Simulator.getInstance().getAgent(i).getCloseList().clear();
+        for (int i = 0; i < simulator.getNumAgents(); ++i) {
+            simulator.getAgent(i).clearTrajectory();
+            simulator.getAgent(i).getCloseList().clear();
         }
 
         iteration = 0;
@@ -95,7 +129,7 @@ public class RVOSolver {
                     setVisibilityGraphPrefferedVelocities();
                     break;
             }
-            Simulator.getInstance().doStep();
+            simulator.doStep();
 
             // HARDCODED SIMULATION SPEED
             //try {
@@ -118,8 +152,7 @@ public class RVOSolver {
         } while (!reachedGoal() && iteration < iterationLimit && jointCost <= maxJointCost);
 
         for (int i = 0; i < trajs.length; i++) {
-            trajs[i] = Simulator.getInstance().getAgent(i)
-                    .getEvaluatedTrajectory();
+            trajs[i] = simulator.getAgent(i).getEvaluatedTrajectory(simulator.timeStep_, goals[i]);
         }
         if (iteration < iterationLimit && jointCost <= maxJointCost) {
             // System.out.println("RVO SUCCESS");
@@ -131,31 +164,30 @@ public class RVOSolver {
     }
 
     private void calculateJointCost() {
-        for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
-            Point p = Simulator.getInstance()
+        for (int i = 0; i < simulator.getNumAgents(); ++i) {
+            Point p = simulator
                     .getAgentPosition(i).convertToPoint2i();
-            Point g = goals.get(i).convertToPoint2i();
+            Point g = goals[i];
             if (!p.equals(g)) {
-                jointCost += Simulator.getInstance().getTimeStep();
+                jointCost += simulator.getTimeStep();
             }
         }
     }
 
-    private void createVisibilityGraph() {
-
-
-        for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
-            visibilityGraphPlanner = new VisibilityGraphPlanner(inflatedObstacles);
-            visibilityGraphPlanner.createVisibilityGraph(goals.get(i).convertToPoint2i());
-            visibilityGraphPlanner.evaluateGraph(i, 10 * graphRadius,
-                    goals.get(i).convertToPoint2i());
-
+    private void createVisibilityGraphController() {
+    	WeightedGraph<Point, Line> visibilityGraphAroundObstacles = VisibilityGraph.createVisibilityGraph(inflatedObstacles, 1);
+        for (int i = 0; i < simulator.getNumAgents(); ++i) {
+            visibilityGraphPlanner = new VisibilityGraphPlanner(visibilityGraphAroundObstacles, inflatedObstacles, true);
+            visibilityGraphPlanner.createVisibilityGraph(goals[i]);
+            simulator.getAgent(i).setEvaluatedGraph(
+            		visibilityGraphPlanner.evaluateGraph(i, 10 * graphRadius,
+                    goals[i]));
         }
     }
 
-    private void createGridGraph() {
-        for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
-            LazyGrid grid = new LazyGrid(goals.get(i).convertToPoint2i(),
+    private void createGridGraphController() {
+        for (int i = 0; i < simulator.getNumAgents(); ++i) {
+            LazyGrid grid = new LazyGrid(goals[i],
                     obstacles, new Rectangle(new Point(-1000, -1000),
                     new Point(1000, 1000)),
                     LazyGrid.PATTERN_4_WAY_WAIT, 1/*
@@ -163,11 +195,11 @@ public class RVOSolver {
 												 * (int)Simulator.getInstance
 												 * ().defaultAgent_.radius_
 												 */);
-            Simulator.getInstance().getAgent(i).setGraph(grid);
+            simulator.getAgent(i).setGraph(grid);
             System.out.println("agent" + i + " grid created, goal: "
-                    + goals.get(i));
+                    + goals[i]);
             DijkstraShortestPaths<Point, Line> dijkstra = new DijkstraShortestPaths<Point, Line>(
-                    grid, goals.get(i).convertToPoint2i(), new Goal<Point>() {
+                    grid, goals[i], new Goal<Point>() {
                 @Override
                 public boolean isGoal(Point current) {
                     return false;
@@ -176,18 +208,18 @@ public class RVOSolver {
 
             HashMap<Point, Double> lengths = dijkstra
                     .findLengths(100000000000l);
-            Simulator.getInstance().getAgent(i).setEvaluatedGraph(lengths);
+            simulator.getAgent(i).setEvaluatedGraph(lengths);
             System.out.println("agent" + i + " grid EVALUATED");
         }
     }
 
     private void setLazyGridPreferredVelocities() {
-        for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
-            Vector2 p = Simulator.getInstance().getAgentPosition(i);
+        for (int i = 0; i < simulator.getNumAgents(); ++i) {
+            Vector2 p = simulator.getAgentPosition(i);
 
-            if (p.convertToPoint2i().distance(goals.get(i).convertToPoint2i()) < adjustPrefferedVolcityNearGoalEpsilon) {
-                Simulator.getInstance().setAgentPrefVelocity(i,
-                        Vector2.minus(goals.get(i), p));
+            if (p.convertToPoint2i().distance(goals[i]) < adjustPrefferedVolcityNearGoalEpsilon) {
+                simulator.setAgentPrefVelocity(i,
+                        Vector2.minus(new Vector2(goals[i]), p));
             } else {
                 // c..center, u..up, d..down
                 ArrayList<Point> neighbourPoints = new ArrayList<>();
@@ -202,7 +234,7 @@ public class RVOSolver {
                         (int) Math.floor(p.y()))); // uu
 
                 Point center = getBestPrefferedPoint(i, neighbourPoints);
-                if (!center.equals(goals.get(i).convertToPoint2i())) {
+                if (!center.equals(goals[i])) {
                     neighbourPoints = new ArrayList<>();
                     neighbourPoints.add(new Point(center.x - 1, center.y - 1)); // dd
                     neighbourPoints.add(new Point(center.x - 1, center.y)); // dc
@@ -218,29 +250,35 @@ public class RVOSolver {
 
                 Vector2 result = new Vector2(center);
 
-                Vector2 graphPointVector = Vector2.minus(result, Simulator
-                        .getInstance().getAgentPosition(i));
+                Vector2 graphPointVector = Vector2.minus(result, simulator.getAgentPosition(i));
                 // if (RVOMath.absSq(graphPointVector) > 1.0f) {
                 graphPointVector = RVOMath.normalize(graphPointVector);
                 // }
-                Simulator.getInstance().setAgentPrefVelocity(i,
+                simulator.setAgentPrefVelocity(i,
                         graphPointVector);
             }
         }
     }
 
     private void setVisibilityGraphPrefferedVelocities() {
-        for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
+        for (int i = 0; i < simulator.getNumAgents(); ++i) {
 
-            Vector2 currentPosition = Simulator.getInstance().getAgentPosition(i);
+            Vector2 currentPosition = simulator.getAgentPosition(i);
 
-            if (currentPosition.convertToPoint2i().distance(goals.get(i).convertToPoint2i()) < adjustPrefferedVolcityNearGoalEpsilon) {
+            //if (currentPosition.convertToPoint2i().distance(goals[i]) < )
+
+
+            if (currentPosition.convertToPoint2i().distance(goals[i]) < adjustPrefferedVolcityNearGoalEpsilon) {
             	// TODO compute velocity that gets agent directly to the goal at the next step.
-            	Vector2  directionToGoal = Vector2.minus(goals.get(i), currentPosition);
-            	// TODO continuo here
-            	Simulator.getInstance().setAgentPrefVelocity(i, new Vector2(0, 0));
+            	Vector2  directionToGoal = Vector2.minus(new Vector2(goals[i]), currentPosition);
+            	// normalize directionToGoal
+
+            	// check if normalize directionToGoal * iterationStep
+            	//directionToGoal.
+
+            	simulator.setAgentPrefVelocity(i, new Vector2(0, 0));
             } else {
-                HashMap<Point, Double> evaluatedGraph = Simulator.getInstance()
+                HashMap<Point, Double> evaluatedGraph = simulator
                         .getAgent(i).getEvaluatedGraph();
 
                 Iterator<Entry<Point, Double>> it = evaluatedGraph.entrySet()
@@ -260,15 +298,15 @@ public class RVOSolver {
                     double navigationEps = 0.1;
 
                     if (dist < navigationEps
-                            && !Simulator.getInstance().getAgent(i)
+                            && !simulator.getAgent(i)
                             .getCloseList().contains(point)) {
-                        Simulator.getInstance().getAgent(i).getCloseList()
+                        simulator.getAgent(i).getCloseList()
                                 .add(point);
 
                     }
 
                     if (sumDistance < minDistance
-                            && !Simulator.getInstance().getAgent(i)
+                            && !simulator.getAgent(i)
                             .getCloseList().contains(point)) {
                         boolean obstacleConflict = false;
                         Point pos = currentPosition.convertToPoint2i();
@@ -296,15 +334,15 @@ public class RVOSolver {
 
                 if (result != null) {
                     result = RVOMath.normalize(result);
-                    float maxSpeed = Simulator.getInstance().getAgentMaxSpeed();
+                    float maxSpeed = simulator.getAgentMaxSpeed();
                     result = Vector2.scale(maxSpeed, result);
-                    Simulator.getInstance().setAgentPrefVelocity(i, result);
+                    simulator.setAgentPrefVelocity(i, result);
                 } else {
                     Vector2 toGoalVelocity = new Vector2(
-                            goals.get(i).x_ - currentPosition.x_, goals.get(i).y_ - currentPosition.y_);
-                    float maxSpeed = Simulator.getInstance().getAgentMaxSpeed();
+                            goals[i].x - currentPosition.x_, goals[i].y - currentPosition.y_);
+                    float maxSpeed = simulator.getAgentMaxSpeed();
                     result = Vector2.scale(maxSpeed, toGoalVelocity);
-                    Simulator.getInstance().setAgentPrefVelocity(i, result);
+                    simulator.setAgentPrefVelocity(i, result);
 
                 }
             }
@@ -312,10 +350,10 @@ public class RVOSolver {
     }
 
     private Point getBestPrefferedPoint(int i, ArrayList<Point> neighbourPoints) {
-        HashMap<Point, Double> evaluatedGraph = Simulator.getInstance()
+        HashMap<Point, Double> evaluatedGraph = simulator
                 .getAgent(i).getEvaluatedGraph();
         Double[] values = new Double[neighbourPoints.size()];
-        Point p = Simulator.getInstance().getAgentPosition(i)
+        Point p = simulator.getAgentPosition(i)
                 .convertToPoint2i();
 
         for (int j = 0; j < neighbourPoints.size(); j++) {
@@ -345,7 +383,7 @@ public class RVOSolver {
         }
         // if all values are null, the agent is too far from the generated graph
         if (index == -1) {
-            return goals.get(i).convertToPoint2i();
+            return goals[i];
         }
         return (neighbourPoints.get(index));
     }
@@ -353,10 +391,10 @@ public class RVOSolver {
     private boolean reachedGoal() {
         /* Check if all agents have reached their goals. */
         float eps = 1f;
-        for (int i = 0; i < Simulator.getInstance().getNumAgents(); ++i) {
-            Point p = Simulator.getInstance()
+        for (int i = 0; i < simulator.getNumAgents(); ++i) {
+            Point p = simulator
                     .getAgentPosition(i).convertToPoint2i();
-            Point g = goals.get(i).convertToPoint2i();
+            Point g = goals[i];
 
             if (p.distance(g) > goalReachedToleranceEpsilon) {
                 return false;
@@ -377,17 +415,33 @@ public class RVOSolver {
      * @param to
      */
     public void setupProblem(JointWaypointState from, JointWaypointState to) {
-        goals = new ArrayList<Vector2>();
-        for (int i = 0; i < Simulator.getInstance().getNumAgents(); i++) {
-            Simulator.getInstance().getAgent(i).position_ = new Vector2(
+        goals = new Point[from.nAgents()];
+        for (int i = 0; i < simulator.getNumAgents(); i++) {
+            simulator.getAgent(i).position_ = new Vector2(
                     from.getPosition(i));
-            Simulator.getInstance().getAgent(i).goal_ = to.getPosition(i);
-            goals.add(new Vector2(to.getPosition(i)));
+            simulator.getAgent(i).goal_ = to.getPosition(i);
+            goals[i] = to.getPosition(i);
         }
     }
 
     public int getIterations() {
         return iteration;
+    }
+
+    private ArrayList<Vector2> regionToVectorList(Rectangle rect) {
+        ArrayList<Vector2> obstacle = new ArrayList<Vector2>();
+
+        Vector2 p1 = new Vector2(rect.getCorner1());
+        Vector2 p3 = new Vector2(rect.getCorner2());
+        Vector2 p2 = new Vector2(p1.x(), p3.y());
+        Vector2 p4 = new Vector2(p3.x(), p1.y());
+
+        obstacle.add(p1);
+        obstacle.add(p4);
+        obstacle.add(p3);
+        obstacle.add(p2);
+
+        return obstacle;
     }
 
 }

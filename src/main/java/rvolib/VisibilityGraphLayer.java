@@ -6,9 +6,13 @@ import cz.agents.alite.vis.element.implemetation.StyledLineImpl;
 import cz.agents.alite.vis.layer.GroupLayer;
 import cz.agents.alite.vis.layer.VisLayer;
 import cz.agents.alite.vis.layer.terminal.StyledLineLayer;
+
+import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.VisibilityGraphPlanner;
 import org.jgrapht.alg.WeightedLine;
 import org.jgrapht.graph.SimpleGraph;
+
+import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 
 import javax.vecmath.Point3d;
@@ -23,7 +27,7 @@ public class VisibilityGraphLayer {
     public static VisLayer create(final VisibilityGraphPlanner planner) {
         GroupLayer group = GroupLayer.create();
 
-		 
+
 /*
 		group.addSubLayer(StyledPointLayer.create(new StyledPointElements() {
 
@@ -32,7 +36,7 @@ public class VisibilityGraphLayer {
 				ArrayList<StyledPoint> points = new ArrayList<StyledPoint>();
 
 				Color color = Color.BLUE;
-				
+
 				Point3d position = new Point3d(agent.position_.x_,
 						agent.position_.y_, 0);
 				points.add(new StyledPointImpl(position, color, 15));
@@ -49,9 +53,9 @@ public class VisibilityGraphLayer {
 
                 Color color = Color.BLUE;
 
-                SimpleGraph<Point, WeightedLine> graph = planner.getGraph();
-                Set<WeightedLine> edges = graph.edgeSet();
-                for (WeightedLine line : edges) {
+                WeightedGraph<Point, Line> graph = planner.getGraph();
+                Set<Line> edges = graph.edgeSet();
+                for (Line line : edges) {
                     Point start = graph.getEdgeSource(line);
                     Point3d start3d = new Point3d(start.x, start.y, 0);
                     Point end = graph.getEdgeTarget(line);

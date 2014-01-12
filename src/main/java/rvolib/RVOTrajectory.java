@@ -13,8 +13,8 @@ public class RVOTrajectory implements EvaluatedTrajectory {
     private float timeStep;
     private Point goal;
 
-    public RVOTrajectory(ArrayList<Point> listOfPoints, float timeStep, Point globalGoal) {
-        this.goal = globalGoal;
+    public RVOTrajectory(ArrayList<Point> listOfPoints, float timeStep, Point goal) {
+        this.goal = goal;
         this.listOfPoints = listOfPoints;
         this.timeStep = timeStep;
         determineCost();

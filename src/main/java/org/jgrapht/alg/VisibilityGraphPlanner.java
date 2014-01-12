@@ -1,13 +1,15 @@
 package org.jgrapht.alg;
 
 import cz.agents.alite.vis.VisManager;
+
 import org.jgrapht.GraphPath;
-import org.jgrapht.graph.SimpleGraph;
+import org.jgrapht.WeightedGraph;
+import org.jgrapht.graph.AbstractBaseGraph;
 import org.jgrapht.util.Goal;
 import org.jgrapht.util.HeuristicToGoal;
-import rvolib.Simulator;
 import rvolib.VisibilityGraphLayer;
 import tt.euclid2i.Point;
+import tt.euclid2i.Line;
 import tt.euclid2i.Region;
 
 import java.util.Collection;
@@ -24,22 +26,16 @@ import java.util.HashSet;
  */
 public class VisibilityGraphPlanner {
 
-    private static final boolean SHOW_GRAPH = false;
-    private SimpleGraph<Point, WeightedLine> graph;
-    private SimpleGraph<Point, WeightedLine> obstacleGraph;
+    private WeightedGraph<Point, Line>  graph;
+    private WeightedGraph<Point, Line>  obstacleGraph;
 
     private Collection<Region> inflatedObstacles;
 
-    public VisibilityGraphPlanner(Collection<Region> inflatedObstacles) {
-        this(inflatedObstacles, SHOW_GRAPH);
-    }
-
-    public VisibilityGraphPlanner(Collection<Region> inflatedObstacles,
+    public VisibilityGraphPlanner(WeightedGraph<Point, Line>  obstacleGraph, Collection<Region> inflatedObstacles,
                                   boolean showVis) {
-        this.inflatedObstacles = inflatedObstacles;
 
-        obstacleGraph = ObstacleVisibilityGraphProvider.getInstance()
-                .getObstacleGraph();
+        this.obstacleGraph = obstacleGraph;
+        this.inflatedObstacles = inflatedObstacles;
 
         if (showVis) {
             VisManager.registerLayer(VisibilityGraphLayer.create(this));
@@ -57,7 +53,7 @@ public class VisibilityGraphPlanner {
     public void createVisibilityGraph(Point[] starts, Point[] goals) {
         // System.out.println("Creating final graph");
         long t1 = System.nanoTime();
-        graph = (SimpleGraph<Point, WeightedLine>) obstacleGraph.clone();
+        graph = (WeightedGraph<Point, Line>)((AbstractBaseGraph)obstacleGraph).clone();
         long t2 = System.nanoTime();
 //		System.out.println("clone graph: "+(t2 - t1));
         t1 = System.nanoTime();
@@ -77,14 +73,11 @@ public class VisibilityGraphPlanner {
         createVisibilityGraph(null, arr);
     }
 
-    private void addWeightedEdgeToGraph(SimpleGraph<Point, WeightedLine> graph,
+    private void addWeightedEdgeToGraph(WeightedGraph<Point, Line>  graph,
                                         Point p1, Point p2) {
         if (!p1.equals(p2) && graph.containsVertex(p1)
                 && graph.containsVertex(p2)) {
             graph.addEdge(p1, p2);
-            WeightedLine l = graph.getEdge(p1, p2);
-            double length = p1.distance(p2);
-            graph.setEdgeWeight(l, length);
         }
     }
 
@@ -103,11 +96,12 @@ public class VisibilityGraphPlanner {
      *
      * @param goal
      * @return
+     * @return
      */
-    public void evaluateGraph(int agentNumber, float graphRadius, Point goal) {
+    public HashMap<Point, Double> evaluateGraph(int agentNumber, float graphRadius, Point goal) {
         // LOGGER.info("VISIBILITY GRAPH CREATING PLAN");
 
-        DijkstraShortestPaths<Point, WeightedLine> dijkstra = new DijkstraShortestPaths<Point, WeightedLine>(
+        DijkstraShortestPaths<Point, Line> dijkstra = new DijkstraShortestPaths<Point, Line>(
                 graph, goal, new Goal<Point>() {
             @Override
             public boolean isGoal(Point current) {
@@ -116,15 +110,13 @@ public class VisibilityGraphPlanner {
         }, graphRadius);
 
         HashMap<Point, Double> lengths = dijkstra.findLengths(100000000000l);
-        Simulator.getInstance().getAgent(agentNumber)
-                .setEvaluatedGraph(lengths);
-
+        return lengths;
     }
 
-    public GraphPath<Point, WeightedLine> getShortestPath(float graphRadius,
+    public GraphPath<Point, Line> getShortestPath(float graphRadius,
                                                           Point start, final Point goal) {
 
-//		AStarShortestPath<Point, WeightedLine> astar = new AStarShortestPath<Point, WeightedLine>(
+//		AStarShortestPath<Point, Line> astar = new AStarShortestPath<Point, Line>(
 //				graph, new HeuristicToGoal<Point>() {
 //
 //					@Override
@@ -139,7 +131,7 @@ public class VisibilityGraphPlanner {
 //					}
 //				}, graphRadius);
         long t1 = System.nanoTime();
-        AStarShortestPathSimple<Point, WeightedLine> astarSimple = new AStarShortestPathSimple<Point, WeightedLine>(
+        AStarShortestPathSimple<Point, Line> astarSimple = new AStarShortestPathSimple<Point, Line>(
                 graph, new HeuristicToGoal<Point>() {
 
             @Override
@@ -155,13 +147,13 @@ public class VisibilityGraphPlanner {
         }
         );
 
-        GraphPath<Point, WeightedLine> path = astarSimple.findPath((int) 100000000000l);
+        GraphPath<Point, Line> path = astarSimple.findPath((int) 100000000000l);
         long t2 = System.nanoTime();
 //		System.out.println("a*: "+(t2 - t1));
         return path;
     }
 
-    public SimpleGraph<Point, WeightedLine> getGraph() {
+    public WeightedGraph<Point, Line>  getGraph() {
         return graph;
     }
 

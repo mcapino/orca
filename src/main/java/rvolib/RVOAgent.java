@@ -50,24 +50,22 @@ public class RVOAgent {
     // goal used for visualization only
     public Point goal_;
 
-    public void computeNeighbors() {
+    public void computeNeighbors(KdTree kdtree) {
         obstacleNeighbors_.clear();
 
         float rangeSq = RVOMath.sqr(timeHorizonObst_ * maxSpeed_ + radius_);
         MutableFloat rangeSqMutable = new MutableFloat(rangeSq);
-        Simulator.getInstance().getKdTree()
-                .computeObstacleNeighbors(this, rangeSq);
+        kdtree.computeObstacleNeighbors(this, rangeSq);
 
         agentNeighbors_.clear();
         if (maxNeighbors_ > 0) {
             rangeSq = RVOMath.sqr(neighborDist_);
-            Simulator.getInstance().getKdTree()
-                    .computeAgentNeighbors(this, rangeSqMutable);
+            kdtree.computeAgentNeighbors(this, rangeSqMutable);
         }
     }
 
     /* Search for the best new velocity. */
-    public void computeNewVelocity() {
+    public void computeNewVelocity(float timeStep) {
         orcaLines_.clear();
 
         float invTimeHorizonObst = 1.0f / timeHorizonObst_;
@@ -433,7 +431,7 @@ public class RVOAgent {
                 }
             } else {
 				/* Collision. Project on cut-off circle of time timeStep. */
-                float invTimeStep = 1.0f / Simulator.getInstance().timeStep_;
+                float invTimeStep = 1.0f / timeStep;
 
 				/* Vector from cutoff center to relative velocity. */
                 Vector2 w = Vector2.minus(relativeVelocity,
@@ -511,20 +509,19 @@ public class RVOAgent {
         }
     }
 
-    public void update() {
+    public void update(float timeStep) {
 //		System.out.println("new velocity: " + newVelocity_);
         velocity_ = newVelocity_;
         // System.out.println(velocity_.getLength());
         position_ = Vector2.plus(position_,
-                Vector2.scale(Simulator.getInstance().timeStep_, velocity_));
+                Vector2.scale(timeStep, velocity_));
         trajectory.add(new Point(Math.round(position_.x_), Math
                 .round(position_.y_)));
         // System.out.println(this.id_+" new position: "+position_.toString());
     }
 
-    public EvaluatedTrajectory getEvaluatedTrajectory() {
-        return new RVOTrajectory(trajectory, Simulator.getInstance()
-                .getTimeStep(), ProblemProvider.getInstance().getProblem().getTarget(id_));
+    public EvaluatedTrajectory getEvaluatedTrajectory(float timeStep, Point goal) {
+        return new RVOTrajectory(trajectory, timeStep, goal);
     }
 
     boolean linearProgram1(ArrayList<RVOLine> lines, int lineNo, float radius,

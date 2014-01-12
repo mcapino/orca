@@ -2,10 +2,13 @@ package util;
 
 import cz.agents.alite.vis.VisManager;
 import org.jgrapht.GraphPath;
+import org.jgrapht.WeightedGraph;
+import org.jgrapht.alg.VisibilityGraph;
 import org.jgrapht.alg.VisibilityGraphPlanner;
 import org.jgrapht.alg.WeightedLine;
 import rvolib.RVOTrajectory;
 import tt.euclid2i.EvaluatedTrajectory;
+import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclid2i.Region;
 import tt.jointeuclid2ni.probleminstance.EarliestArrivalProblem;
@@ -62,11 +65,11 @@ public class OptimalSolutionProvider {
     private int calculateFeasibleOptimisticSolution() {
 
         int sumMaxTime = 0;
-        ArrayList<GraphPath<Point, WeightedLine>> shortestPaths = createVisibilityGraph(
+        ArrayList<GraphPath<Point, Line>> shortestPaths = createVisibilityGraph(
                 problem.getStarts(), problem.getTargets());
         // create trajectories
         for (int i = 0; i < problem.nAgents(); i++) {
-            GraphPath<Point, WeightedLine> graphPath = shortestPaths.get(i);
+            GraphPath<Point, Line> graphPath = shortestPaths.get(i);
             trajectories[i] = calculateTrajectory(graphPath, (int) agentMaxSpeed);
         }
 
@@ -78,7 +81,7 @@ public class OptimalSolutionProvider {
                 return -1;
             }
             Point edgeStart = shortestPaths.get(i).getStartVertex();
-            for (WeightedLine edge : shortestPaths.get(i).getEdgeList()) {
+            for (Line edge : shortestPaths.get(i).getEdgeList()) {
                 Point pp1 = edge.getStart();
                 Point pp2 = edge.getEnd();
                 Point edgeEnd;
@@ -97,16 +100,18 @@ public class OptimalSolutionProvider {
         return sumMaxTime;
     }
 
-    private ArrayList<GraphPath<Point, WeightedLine>> createVisibilityGraph(
+    private ArrayList<GraphPath<Point, Line>> createVisibilityGraph(
             Point[] starts, Point[] goals) {
         ArrayList<Point> goalList = new ArrayList<>();
         for (int i = 0; i < problem.nAgents(); i++) {
             goalList.add(goals[i]);
         }
-        VisibilityGraphPlanner visibilityGraphPlanner = new VisibilityGraphPlanner(
+        WeightedGraph<Point, Line> visGraph = VisibilityGraph.createVisibilityGraph(inflatedObstacles, 1);
+
+        VisibilityGraphPlanner visibilityGraphPlanner = new VisibilityGraphPlanner(visGraph,
                 inflatedObstacles, false);
 
-        ArrayList<GraphPath<Point, WeightedLine>> shortestPaths = new ArrayList<>();
+        ArrayList<GraphPath<Point, Line>> shortestPaths = new ArrayList<>();
 
         visibilityGraphPlanner.createVisibilityGraph(starts, goals);
 
@@ -134,13 +139,13 @@ public class OptimalSolutionProvider {
 
 
     private EvaluatedTrajectory calculateTrajectory(
-            GraphPath<Point, WeightedLine> shortestPath, int maxSpeed) {
+            GraphPath<Point, Line> shortestPath, int maxSpeed) {
 
 
         ArrayList<Point> trajectory = new ArrayList<Point>();
 
         Point edgeStart = shortestPath.getStartVertex();
-        for (WeightedLine edge : shortestPath.getEdgeList()) {
+        for (Line edge : shortestPath.getEdgeList()) {
             Point pp1 = edge.getStart();
             Point pp2 = edge.getEnd();
             Point edgeEnd;

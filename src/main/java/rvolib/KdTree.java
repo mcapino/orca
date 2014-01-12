@@ -58,11 +58,12 @@ public class KdTree {
 
     private ObstacleTreeNode obstacleTree_;
 
-    public void buildAgentTree() {
-        if (agents_ == null || agents_.length != Simulator.getInstance().getNumAgents()) {
-            agents_ = new RVOAgent[Simulator.getInstance().getNumAgents()];
+    public void buildAgentTree(RVOAgent[] agents) {
+
+        if (agents_ == null || agents_.length != agents.length) {
+            agents_ = new RVOAgent[agents.length];
             for (int i = 0; i < agents_.length; ++i) {
-                agents_[i] = Simulator.getInstance().getAgent(i);
+                agents_[i] = agents[i];
             }
 
             agentTree_ = new AgentTreeNode[2 * agents_.length];
@@ -131,19 +132,19 @@ public class KdTree {
         }
     }
 
-    public void buildObstacleTree() {
+    public void buildObstacleTree(RVOObstacle[] obstaclesArg, Simulator simulator) {
         obstacleTree_ = new ObstacleTreeNode();
 
-        ArrayList<RVOObstacle> obstacles = new ArrayList<RVOObstacle>(Simulator.getInstance().obstacles_.size());
+        ArrayList<RVOObstacle> obstacles = new ArrayList<RVOObstacle>(obstaclesArg.length);
 
-        for (int i = 0; i < Simulator.getInstance().obstacles_.size(); ++i) {
-            obstacles.add(Simulator.getInstance().obstacles_.get(i));
+        for (int i = 0; i < obstaclesArg.length ; ++i) {
+            obstacles.add(obstaclesArg[i]);
         }
 
-        obstacleTree_ = buildObstacleTreeRecursive(obstacles);
+        obstacleTree_ = buildObstacleTreeRecursive(obstacles, simulator);
     }
 
-    ObstacleTreeNode buildObstacleTreeRecursive(ArrayList<RVOObstacle> obstacles) {
+    ObstacleTreeNode buildObstacleTreeRecursive(ArrayList<RVOObstacle> obstacles, Simulator simulator) {
         if (obstacles.size() == 0) {
             return null;
         } else {
@@ -235,9 +236,9 @@ public class KdTree {
                         newObstacle.isConvex_ = true;
                         newObstacle.unitDir_ = obstacleJ1.unitDir_;
 
-                        newObstacle.id_ = Simulator.getInstance().obstacles_.size();
+                        newObstacle.id_ = simulator.obstacles_.size();
 
-                        Simulator.getInstance().obstacles_.add(newObstacle);
+                        simulator.obstacles_.add(newObstacle);
 
                         obstacleJ1.nextObstacle = newObstacle;
                         obstacleJ2.prevObstacle = newObstacle;
@@ -253,8 +254,8 @@ public class KdTree {
                 }
 
                 node.obstacle = obstacleI1;
-                node.left = buildObstacleTreeRecursive(leftObstacles);
-                node.right = buildObstacleTreeRecursive(rightObstacles);
+                node.left = buildObstacleTreeRecursive(leftObstacles, simulator);
+                node.right = buildObstacleTreeRecursive(rightObstacles, simulator);
                 return node;
             }
         }

@@ -20,15 +20,11 @@ public class Simulator {
 
     private Collection<Region> rectangleObstacles = new LinkedList<Region>();
 
-    public static Simulator getInstance() {
-        return instance_;
-    }
+//    public static Simulator getInstance() {
+//        return instance_;
+//    }
 
-    private Simulator() {
-        clear();
-    }
-
-    public void clear() {
+    Simulator() {
         agents_ = new ArrayList<RVOAgent>();
         obstacles_ = new ArrayList<RVOObstacle>();
         time_ = 0;
@@ -36,7 +32,6 @@ public class Simulator {
         kdTree_ = new KdTree();
         timeStep_ = .1f;
 
-        //SetNumWorkers(0);
     }
 
     public float getGlobalTime() {
@@ -105,7 +100,7 @@ public class Simulator {
         }
 
         defaultAgent_.maxNeighbors_ = maxNeighbors;
-        defaultAgent_.maxSpeed_ = maxSpeed; 
+        defaultAgent_.maxSpeed_ = maxSpeed;
         defaultAgent_.neighborDist_ = neighborDist; // probably the distance at which the neighboring agents are registered
         defaultAgent_.radius_ = radius; //
         defaultAgent_.timeHorizon_ = timeHorizon;
@@ -115,15 +110,15 @@ public class Simulator {
 
     //TODO paralelize doStep
     public void doStep() {
-        kdTree_.buildAgentTree();
+        kdTree_.buildAgentTree(agents_.toArray(new RVOAgent[0]));
 
         for (int i = 0; i < (agents_.size()); ++i) {
-            agents_.get(i).computeNeighbors();
-            agents_.get(i).computeNewVelocity();
+            agents_.get(i).computeNeighbors(kdTree_);
+            agents_.get(i).computeNewVelocity(timeStep_);
         }
 
         for (int i = 0; i < (agents_.size()); ++i) {
-            agents_.get(i).update();
+            agents_.get(i).update(timeStep_);
         }
 
         time_ += timeStep_;
@@ -167,7 +162,7 @@ public class Simulator {
     }
 
     public void processObstacles() {
-        kdTree_.buildObstacleTree();
+        kdTree_.buildObstacleTree(obstacles_.toArray(new RVOObstacle[0]), this);
     }
 
     public boolean queryVisibility(Vector2 point1, Vector2 point2, float radius) {

@@ -7,9 +7,9 @@ public class ProblemProvider {
     private static ProblemProvider instance = new ProblemProvider();
     private EarliestArrivalProblem problem;
 
-    public static ProblemProvider getInstance() {
-        return instance;
-    }
+//    public static ProblemProvider getInstance() {
+//        return instance;
+//    }
 
     public void init(EarliestArrivalProblem problem) {
 
