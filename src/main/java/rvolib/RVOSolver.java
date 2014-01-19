@@ -2,7 +2,6 @@ package rvolib;
 
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPaths;
-import org.jgrapht.alg.VisibilityGraph;
 import org.jgrapht.alg.VisibilityGraphPlanner;
 import org.jgrapht.util.Goal;
 import rrt.JointWaypointState;
@@ -10,6 +9,7 @@ import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclid2i.Region;
 import tt.euclid2i.discretization.LazyGrid;
+import tt.euclid2i.discretization.VisibilityGraph;
 import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
 import tt.jointtraj.solver.SearchResult;
@@ -170,7 +170,7 @@ public class RVOSolver {
     }
 
     private void createVisibilityGraphController() {
-    	WeightedGraph<Point, Line> visibilityGraphAroundObstacles = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles);
+    	WeightedGraph<Point, Line> visibilityGraphAroundObstacles = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles, Collections.EMPTY_LIST);
         for (int i = 0; i < simulator.getNumAgents(); i++) {
             visibilityGraphPlanner = new VisibilityGraphPlanner(visibilityGraphAroundObstacles, lessInflatedObstacles, true);
             visibilityGraphPlanner.createVisibilityGraph(goals[i]);

@@ -3,7 +3,6 @@ package util;
 import cz.agents.alite.vis.VisManager;
 import org.jgrapht.GraphPath;
 import org.jgrapht.WeightedGraph;
-import org.jgrapht.alg.VisibilityGraph;
 import org.jgrapht.alg.VisibilityGraphPlanner;
 import org.jgrapht.alg.WeightedLine;
 import rvolib.RVOTrajectory;
@@ -11,6 +10,7 @@ import tt.euclid2i.EvaluatedTrajectory;
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclid2i.Region;
+import tt.euclid2i.discretization.VisibilityGraph;
 import tt.jointeuclid2ni.probleminstance.EarliestArrivalProblem;
 import tt.vis.TrajectoriesLayer;
 import tt.vis.TrajectoriesLayer.TrajectoriesProvider;
@@ -18,6 +18,7 @@ import tt.vis.TrajectoriesLayer.TrajectoriesProvider;
 import javax.vecmath.Vector3d;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 public class OptimalSolutionProvider {
 
@@ -108,7 +109,7 @@ public class OptimalSolutionProvider {
         for (int i = 0; i < problem.nAgents(); i++) {
             goalList.add(goals[i]);
         }
-        WeightedGraph<Point, Line> visGraph = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles);
+        WeightedGraph<Point, Line> visGraph = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles, Collections.EMPTY_LIST);
 
         VisibilityGraphPlanner visibilityGraphPlanner = new VisibilityGraphPlanner(visGraph,
                 lessInflatedObstacles, false);
