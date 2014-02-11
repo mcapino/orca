@@ -1,9 +1,18 @@
 package rvolib;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPaths;
 import org.jgrapht.alg.VisibilityGraphPlanner;
 import org.jgrapht.util.Goal;
+
 import rrt.JointWaypointState;
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
@@ -14,12 +23,9 @@ import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
 import tt.jointtraj.solver.SearchResult;
 
-import java.util.*;
-import java.util.Map.Entry;
-
 public class RVOSolver {
 
-	/** Somewhere near goal the agent must adjust the preferred velocity to avoid overshooting **/
+    /** Somewhere near goal the agent must adjust the preferred velocity to avoid overshooting **/
     private float adjustPrefferedVolcityNearGoalEpsilon = 0;
     /**	The agent is considered at goal if the distance between its current position and the goal is within this tolerance **/
     private float goalReachedToleranceEpsilon = 0; // 0.1f;
@@ -37,21 +43,21 @@ public class RVOSolver {
     private boolean showProgress;
 
     Simulator simulator;
-	public RVOSolver(Point[] starts, Point[] goals, int bodyRadius,
+    public RVOSolver(Point[] starts, Point[] goals, int bodyRadius,
                      Collection<Region> obstacles,
                      float timeStep, float neighborDist,
                      int maxNeighbors, float deconflictionTimeHorizonAgents,
                      float deconflictionTimeHorizonObstacles, float maxSpeed, boolean showProgress) {
 
-		this.showProgress = showProgress;
-		this.simulator = new Simulator();
-		this.simulator.setShowVis(showProgress);
+        this.showProgress = showProgress;
+        this.simulator = new Simulator();
+        this.simulator.setShowVis(showProgress);
 
         simulator.setTimeStep(timeStep);
 
         Vector2 initialVelocity = new Vector2();
         simulator.setAgentDefaults(neighborDist, maxNeighbors, deconflictionTimeHorizonAgents, deconflictionTimeHorizonObstacles,
-        		bodyRadius, maxSpeed, initialVelocity);
+                bodyRadius, maxSpeed, initialVelocity);
 
 
         // ADD OBSTACLES
@@ -103,7 +109,7 @@ public class RVOSolver {
                 createGridGraphController();
                 break;
             case VISIBILITY_GRAPH:
-            	createVisibilityGraphController();
+                createVisibilityGraphController();
                 break;
         }
 
@@ -127,11 +133,11 @@ public class RVOSolver {
             // HARDCODED SIMULATION SPEED
 
             if (showProgress) {
-	            try {
-	                Thread.sleep((long) 10);
-	            } catch (InterruptedException e) {
-	                e.printStackTrace();
-	            }
+                try {
+                    Thread.sleep((long) 10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             iteration++;
@@ -170,12 +176,12 @@ public class RVOSolver {
     }
 
     private void createVisibilityGraphController() {
-    	WeightedGraph<Point, Line> visibilityGraphAroundObstacles = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles, Collections.EMPTY_LIST);
+        WeightedGraph<Point, Line> visibilityGraphAroundObstacles = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles, Collections.EMPTY_LIST);
         for (int i = 0; i < simulator.getNumAgents(); i++) {
             visibilityGraphPlanner = new VisibilityGraphPlanner(visibilityGraphAroundObstacles, lessInflatedObstacles, true);
             visibilityGraphPlanner.createVisibilityGraph(goals[i]);
             simulator.getAgent(i).setEvaluatedGraph(
-            		visibilityGraphPlanner.evaluateGraph(i, 10 * graphRadius,
+                    visibilityGraphPlanner.evaluateGraph(i, 10 * graphRadius,
                     goals[i]));
         }
     }
@@ -187,9 +193,9 @@ public class RVOSolver {
                     new Point(1000, 1000)),
                     LazyGrid.PATTERN_4_WAY_WAIT, 1/*
                                                  * 2 *
-												 * (int)Simulator.getInstance
-												 * ().defaultAgent_.radius_
-												 */);
+                                                 * (int)Simulator.getInstance
+                                                 * ().defaultAgent_.radius_
+                                                 */);
             simulator.getAgent(i).setGraph(grid);
             System.out.println("agent" + i + " grid created, goal: "
                     + goals[i]);
@@ -217,7 +223,7 @@ public class RVOSolver {
                         Vector2.minus(new Vector2(goals[i]), p));
             } else {
                 // c..center, u..up, d..down
-                ArrayList<Point> neighbourPoints = new ArrayList<>();
+                ArrayList<Point> neighbourPoints = new ArrayList<Point>();
 
                 neighbourPoints.add(new Point((int) Math.floor(p.x()),
                         (int) Math.ceil(p.y()))); // cu
@@ -230,7 +236,7 @@ public class RVOSolver {
 
                 Point center = getBestPrefferedPoint(i, neighbourPoints);
                 if (!center.equals(goals[i])) {
-                    neighbourPoints = new ArrayList<>();
+                    neighbourPoints = new ArrayList<Point>();
                     neighbourPoints.add(new Point(center.x - 1, center.y - 1)); // dd
                     neighbourPoints.add(new Point(center.x - 1, center.y)); // dc
                     neighbourPoints.add(new Point(center.x - 1, center.y + 1)); // du
@@ -263,7 +269,7 @@ public class RVOSolver {
 
 
             if (currentPosition.convertToPoint2i().distance(goals[i]) < adjustPrefferedVolcityNearGoalEpsilon) {
-            	simulator.setAgentPrefVelocity(i, new Vector2(0, 0));
+                simulator.setAgentPrefVelocity(i, new Vector2(0, 0));
             } else {
                 HashMap<Point, Double> evaluatedGraph = simulator
                         .getAgent(i).getEvaluatedGraph();
@@ -274,7 +280,7 @@ public class RVOSolver {
                 Vector2 result = null;
                 while (it.hasNext()) {
                     Map.Entry pairs = (Map.Entry) it.next();
-                    double value = (double) pairs.getValue();
+                    double value = (Double) pairs.getValue();
                     Point point = (Point) pairs.getKey();
 
                     Vector2 vector = new Vector2(point.x - currentPosition.x(), point.y
@@ -314,17 +320,17 @@ public class RVOSolver {
                     }
                 }
 
-				if (result != null) {
+                if (result != null) {
                     result = RVOMath.normalize(result);
                     float maxSpeed = simulator.getAgentMaxSpeed();
 
                     if (distanceToGoal > simulator.timeStep_ * maxSpeed) {
-                    	// it will take some time to reach the goal
-                    	result = Vector2.scale(maxSpeed, result);
+                        // it will take some time to reach the goal
+                        result = Vector2.scale(maxSpeed, result);
                     } else {
-                    	// goal will be reached in the next time step
-                    	double speed = distanceToGoal/maxSpeed;
-                    	result = Vector2.scale((float)speed, result);
+                        // goal will be reached in the next time step
+                        double speed = distanceToGoal/maxSpeed;
+                        result = Vector2.scale((float)speed, result);
                     }
 
                     simulator.setAgentPrefVelocity(i, result);
@@ -332,7 +338,7 @@ public class RVOSolver {
                     Vector2 toGoalVelocityVector = new Vector2(
                             goals[i].x - currentPosition.x_, goals[i].y - currentPosition.y_);
                     float maxSpeed = simulator.getAgentMaxSpeed();
-                   	result = Vector2.scale(maxSpeed, toGoalVelocityVector);
+                       result = Vector2.scale(maxSpeed, toGoalVelocityVector);
                     simulator.setAgentPrefVelocity(i, result);
                 }
             }

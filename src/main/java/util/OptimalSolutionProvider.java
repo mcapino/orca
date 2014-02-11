@@ -1,10 +1,15 @@
 package util;
 
-import cz.agents.alite.vis.VisManager;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+
+import javax.vecmath.Vector3d;
+
 import org.jgrapht.GraphPath;
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.VisibilityGraphPlanner;
-import org.jgrapht.alg.WeightedLine;
+
 import rvolib.RVOTrajectory;
 import tt.euclid2i.EvaluatedTrajectory;
 import tt.euclid2i.Line;
@@ -14,11 +19,7 @@ import tt.euclid2i.discretization.VisibilityGraph;
 import tt.jointeuclid2ni.probleminstance.EarliestArrivalProblem;
 import tt.vis.TrajectoriesLayer;
 import tt.vis.TrajectoriesLayer.TrajectoriesProvider;
-
-import javax.vecmath.Vector3d;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import cz.agents.alite.vis.VisManager;
 
 public class OptimalSolutionProvider {
 
@@ -45,7 +46,7 @@ public class OptimalSolutionProvider {
         this.lessInflatedObstacles = lessInflatedObstacles;
         this.moreInflatedObstacles = moreInflatedObstacles;
         this.optimalSolutionCost = calculateFeasibleOptimisticSolution();
-        extensionRunTimes = new ArrayList<>();
+        extensionRunTimes = new ArrayList<Long>();
 
         if (showOptimalSolution) {
             visualizeOptimalSolution();
@@ -105,7 +106,7 @@ public class OptimalSolutionProvider {
 
     private ArrayList<GraphPath<Point, Line>> createVisibilityGraph(
             Point[] starts, Point[] goals) {
-        ArrayList<Point> goalList = new ArrayList<>();
+        ArrayList<Point> goalList = new ArrayList<Point>();
         for (int i = 0; i < problem.nAgents(); i++) {
             goalList.add(goals[i]);
         }
@@ -114,7 +115,7 @@ public class OptimalSolutionProvider {
         VisibilityGraphPlanner visibilityGraphPlanner = new VisibilityGraphPlanner(visGraph,
                 lessInflatedObstacles, false);
 
-        ArrayList<GraphPath<Point, Line>> shortestPaths = new ArrayList<>();
+        ArrayList<GraphPath<Point, Line>> shortestPaths = new ArrayList<GraphPath<Point, Line>>();
 
         visibilityGraphPlanner.createVisibilityGraph(starts, goals);
 
