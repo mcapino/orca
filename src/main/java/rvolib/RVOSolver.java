@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPaths;
 import org.jgrapht.alg.VisibilityGraphPlanner;
@@ -19,6 +20,7 @@ import tt.euclid2i.Point;
 import tt.euclid2i.Region;
 import tt.euclid2i.discretization.LazyGrid;
 import tt.euclid2i.discretization.VisibilityGraph;
+import tt.euclid2i.region.Polygon;
 import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
 import tt.jointtraj.solver.SearchResult;
@@ -64,11 +66,11 @@ public class RVOSolver {
         // Add obstacles
         for (Region region : obstacles) {
             // We support only rectangles?
-            if (!(region instanceof Rectangle)) {
-                throw new RuntimeException("Only rectangles are supported");
+            if (!(region instanceof Polygon)) {
+                throw new RuntimeException("Only polygons are supported");
                 //region = region.getBoundingBox();
             }
-            ArrayList<Vector2> obstacle = regionToVectorList((Rectangle) region);
+            ArrayList<Vector2> obstacle = regionToVectorList((Polygon) region);
             simulator.addObstacle(obstacle);
         }
 
@@ -427,19 +429,20 @@ public class RVOSolver {
         return iteration;
     }
 
-    private ArrayList<Vector2> regionToVectorList(Rectangle rect) {
+    private ArrayList<Vector2> regionToVectorList(Polygon polygon) {
+
+        Point[] points = polygon.getPoints();
+
+        if (!polygon.isClockwiseDefined()) {
+           ArrayUtils.reverse(points);
+        }
+
         ArrayList<Vector2> obstacle = new ArrayList<Vector2>();
 
-        Vector2 p1 = new Vector2(rect.getCorner1());
-        Vector2 p3 = new Vector2(rect.getCorner2());
-        Vector2 p2 = new Vector2(p1.x(), p3.y());
-        Vector2 p4 = new Vector2(p3.x(), p1.y());
 
-        obstacle.add(p1);
-        obstacle.add(p4);
-        obstacle.add(p3);
-        obstacle.add(p2);
-
+        for (Point point : points) {
+            obstacle.add(new Vector2(point.x, point.y));
+        }
         return obstacle;
     }
 
