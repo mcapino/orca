@@ -47,7 +47,8 @@ public class RVOSolver {
                      Collection<Region> obstacles,
                      float timeStep, float neighborDist,
                      int maxNeighbors, float deconflictionTimeHorizonAgents,
-                     float deconflictionTimeHorizonObstacles, float maxSpeed, boolean showProgress) {
+                     float deconflictionTimeHorizonObstacles,
+                     float maxSpeed, boolean showProgress) {
 
         this.showProgress = showProgress;
         this.simulator = new Simulator();
@@ -60,28 +61,29 @@ public class RVOSolver {
                 bodyRadius, maxSpeed, initialVelocity);
 
 
-        // ADD OBSTACLES
+        // Add obstacles
         for (Region region : obstacles) {
+            // We support only rectangles?
             if (!(region instanceof Rectangle)) {
-                region = region.getBoundingBox();
+                throw new RuntimeException("Only rectangles are supported");
+                //region = region.getBoundingBox();
             }
             ArrayList<Vector2> obstacle = regionToVectorList((Rectangle) region);
             simulator.addObstacle(obstacle);
-
         }
 
         simulator.processObstacles();
 
         this.goals = goals;
 
-        // ADD AGENTS
+        // Add agents
         for (int i = 0; i < starts.length; i++) {
             Vector2 start = new Vector2(starts[i]);
             simulator.addAgent(start);
             simulator.getAgent(i).goal_ = goals[i];
         }
 
-        this.graphRadius = 1000;// 2 * conflictRadius + 50;
+        this.graphRadius = 1000; // 2 * conflictRadius + 50;
         // VisManager.registerLayer(SimulationControlLayer.create(this));
         this.obstacles = obstacles;
         this.lessInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius-1);
@@ -153,7 +155,7 @@ public class RVOSolver {
         } while (!reachedGoal() && iteration < iterationLimit && jointCost <= maxJointCost);
 
         for (int i = 0; i < trajs.length; i++) {
-            trajs[i] = simulator.getAgent(i).getEvaluatedTrajectory(simulator.timeStep_, goals[i], (int) Math.ceil(iterationLimit * simulator.timeStep_));
+            trajs[i] = simulator.getAgent(i).getEvaluatedTrajectory(simulator.timeStep, goals[i], (int) Math.ceil(iterationLimit * simulator.timeStep));
         }
         if (iteration < iterationLimit && jointCost <= maxJointCost) {
             // System.out.println("RVO SUCCESS");
@@ -324,7 +326,7 @@ public class RVOSolver {
                     result = RVOMath.normalize(result);
                     float maxSpeed = simulator.getAgentMaxSpeed();
 
-                    if (distanceToGoal > simulator.timeStep_ * maxSpeed) {
+                    if (distanceToGoal > simulator.timeStep * maxSpeed) {
                         // it will take some time to reach the goal
                         result = Vector2.scale(maxSpeed, result);
                     } else {
@@ -401,7 +403,8 @@ public class RVOSolver {
     }
 
     public static enum outerLoopControl {
-        LAZY_GRID, VISIBILITY_GRAPH;
+        LAZY_GRID,
+        VISIBILITY_GRAPH
     }
 
     /**

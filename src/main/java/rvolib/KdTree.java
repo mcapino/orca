@@ -236,9 +236,9 @@ public class KdTree {
                         newObstacle.isConvex_ = true;
                         newObstacle.unitDir_ = obstacleJ1.unitDir_;
 
-                        newObstacle.id_ = simulator.obstacles_.size();
+                        newObstacle.id_ = simulator.obstacles.size();
 
-                        simulator.obstacles_.add(newObstacle);
+                        simulator.obstacles.add(newObstacle);
 
                         obstacleJ1.nextObstacle = newObstacle;
                         obstacleJ2.prevObstacle = newObstacle;
