@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPaths;
 import org.jgrapht.alg.VisibilityGraphPlanner;
@@ -433,17 +432,11 @@ public class RVOSolver {
 
         Point[] points = polygon.getPoints();
 
-        if (!polygon.isClockwiseDefined()) {
-           ArrayUtils.reverse(points);
-        }
-
         ArrayList<Vector2> obstacle = new ArrayList<Vector2>();
-
 
         for (Point point : points) {
             obstacle.add(new Vector2(point.x, point.y));
         }
         return obstacle;
     }
-
 }
