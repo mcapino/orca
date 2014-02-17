@@ -2,12 +2,10 @@ package util;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
 import javax.vecmath.Vector3d;
 
 import org.jgrapht.GraphPath;
-import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.VisibilityGraphPlanner;
 
 import rvolib.RVOTrajectory;
@@ -15,7 +13,6 @@ import tt.euclid2i.EvaluatedTrajectory;
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclid2i.Region;
-import tt.euclid2i.discretization.VisibilityGraph;
 import tt.jointeuclid2ni.probleminstance.EarliestArrivalProblem;
 import tt.vis.TrajectoriesLayer;
 import tt.vis.TrajectoriesLayer.TrajectoriesProvider;
@@ -104,25 +101,12 @@ public class OptimalSolutionProvider {
         return sumMaxTime;
     }
 
-    private ArrayList<GraphPath<Point, Line>> createVisibilityGraph(
-            Point[] starts, Point[] goals) {
-        ArrayList<Point> goalList = new ArrayList<Point>();
-        for (int i = 0; i < problem.nAgents(); i++) {
-            goalList.add(goals[i]);
-        }
-        WeightedGraph<Point, Line> visGraph = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles, Collections.EMPTY_LIST);
-
-        VisibilityGraphPlanner visibilityGraphPlanner = new VisibilityGraphPlanner(visGraph,
-                lessInflatedObstacles, false);
-
+    private ArrayList<GraphPath<Point, Line>> createVisibilityGraph(Point[] starts, Point[] goals) {
         ArrayList<GraphPath<Point, Line>> shortestPaths = new ArrayList<GraphPath<Point, Line>>();
 
-        visibilityGraphPlanner.createVisibilityGraph(starts, goals);
-
         for (int i = 0; i < problem.nAgents(); i++) {
-
-            shortestPaths.add(visibilityGraphPlanner.getShortestPath(10000,
-                    starts[i], goals[i]));
+            VisibilityGraphPlanner visibilityGraphPlanner = new VisibilityGraphPlanner(starts[i], goals[i], lessInflatedObstacles, moreInflatedObstacles, false);
+            shortestPaths.add(visibilityGraphPlanner.getShortestPath(starts[i], goals[i]));
         }
 
         return shortestPaths;

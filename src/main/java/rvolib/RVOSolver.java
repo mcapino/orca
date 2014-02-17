@@ -2,13 +2,9 @@ package rvolib;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 
-import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPaths;
 import org.jgrapht.alg.VisibilityGraphPlanner;
 import org.jgrapht.util.Goal;
@@ -18,7 +14,6 @@ import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclid2i.Region;
 import tt.euclid2i.discretization.LazyGrid;
-import tt.euclid2i.discretization.VisibilityGraph;
 import tt.euclid2i.region.Polygon;
 import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
@@ -32,10 +27,10 @@ public class RVOSolver {
     private float goalReachedToleranceEpsilon = 0; // 0.1f;
 
     private Point[] goals;
+    /* maximum radius of Dijkstra expansion radius*/
     private float graphRadius;
 
     private outerLoopControl preferredVelocityControlerMethod = outerLoopControl.VISIBILITY_GRAPH;
-    private VisibilityGraphPlanner visibilityGraphPlanner;
     private Collection<Region> obstacles;
     private Collection<Region> moreInflatedObstacles;
     private Collection<Region> lessInflatedObstacles;
@@ -44,6 +39,7 @@ public class RVOSolver {
     private boolean showProgress;
 
     Simulator simulator;
+    private Point[] starts;
     public RVOSolver(Point[] starts, Point[] goals, int bodyRadius,
                      Collection<Region> obstacles,
                      float timeStep, float neighborDist,
@@ -64,10 +60,8 @@ public class RVOSolver {
 
         // Add obstacles
         for (Region region : obstacles) {
-            // We support only rectangles?
             if (!(region instanceof Polygon)) {
                 throw new RuntimeException("Only polygons are supported");
-                //region = region.getBoundingBox();
             }
             ArrayList<Vector2> obstacle = regionToVectorList((Polygon) region);
             simulator.addObstacle(obstacle);
@@ -75,6 +69,7 @@ public class RVOSolver {
 
         simulator.processObstacles();
 
+        this.starts = starts;
         this.goals = goals;
 
         // Add agents
@@ -98,14 +93,14 @@ public class RVOSolver {
 
         tt.euclid2i.EvaluatedTrajectory[] trajs = new tt.euclid2i.EvaluatedTrajectory[simulator.getNumAgents()];
 
-        for (Point goal : goals) {
-            for (Region r : obstacles) {
-                if (r.isInside(goal)) {
-                    // System.out.println("RVO FAILURE");
-                    return new SearchResult(trajs, false);
-                }
-            }
-        }
+//        for (Point goal : goals) {
+//            for (Region r : obstacles) {
+//                if (r.isInside(goal)) {
+//                    //System.out.println("Goal point lies in an obstacle!");
+//                    //return new SearchResult(trajs, false);
+//                }
+//            }
+//        }
 
         switch (preferredVelocityControlerMethod) {
             case LAZY_GRID:
@@ -116,7 +111,7 @@ public class RVOSolver {
                 break;
         }
 
-        for (int i = 0; i < simulator.getNumAgents(); ++i) {
+        for (int i = 0; i < simulator.getNumAgents(); i++) {
             simulator.getAgent(i).clearTrajectory();
             simulator.getAgent(i).getCloseList().clear();
         }
@@ -144,10 +139,8 @@ public class RVOSolver {
             }
 
             iteration++;
-//			System.out.println(iteration);
 
             calculateJointCost();
-//			System.out.println("threshold: " + maxJointCost + " optimal solution cost: " + OptimalSolutionProvider.getInstance().getOptimalSolutionCost() + " cost: " + jointCost);
 
             if (System.nanoTime() > interruptAtNs) {
                 return new SearchResult(null, false);
@@ -179,13 +172,14 @@ public class RVOSolver {
     }
 
     private void createVisibilityGraphController() {
-        WeightedGraph<Point, Line> visibilityGraphAroundObstacles = VisibilityGraph.createVisibilityGraph(lessInflatedObstacles, moreInflatedObstacles, Collections.EMPTY_LIST);
+
         for (int i = 0; i < simulator.getNumAgents(); i++) {
-            visibilityGraphPlanner = new VisibilityGraphPlanner(visibilityGraphAroundObstacles, lessInflatedObstacles, true);
-            visibilityGraphPlanner.createVisibilityGraph(goals[i]);
+
+            VisibilityGraphPlanner visibilityGraphPlanner = new VisibilityGraphPlanner(starts[i], goals[i], lessInflatedObstacles, moreInflatedObstacles, true);
+            HashMap<Point, Double> nodeValueMap = visibilityGraphPlanner.evaluateGraph(10 * graphRadius, goals[i]);
             simulator.getAgent(i).setEvaluatedGraph(
-                    visibilityGraphPlanner.evaluateGraph(i, 10 * graphRadius,
-                    goals[i]));
+                        nodeValueMap
+                    );
         }
     }
 
@@ -265,7 +259,7 @@ public class RVOSolver {
     }
 
     private void setVisibilityGraphPrefferedVelocities() {
-        for (int i = 0; i < simulator.getNumAgents(); ++i) {
+        for (int i = 0; i < simulator.getNumAgents(); i++) {
 
             Vector2 currentPosition = simulator.getAgentPosition(i);
             double distanceToGoal = currentPosition.convertToPoint2i().distance(goals[i]);
@@ -274,75 +268,65 @@ public class RVOSolver {
             if (currentPosition.convertToPoint2i().distance(goals[i]) < adjustPrefferedVolcityNearGoalEpsilon) {
                 simulator.setAgentPrefVelocity(i, new Vector2(0, 0));
             } else {
-                HashMap<Point, Double> evaluatedGraph = simulator
-                        .getAgent(i).getEvaluatedGraph();
 
-                Iterator<Entry<Point, Double>> it = evaluatedGraph.entrySet()
-                        .iterator();
-                double minDistance = Double.MAX_VALUE;
-                Vector2 result = null;
-                while (it.hasNext()) {
-                    Map.Entry pairs = (Map.Entry) it.next();
-                    double value = (Double) pairs.getValue();
-                    Point point = (Point) pairs.getKey();
+                HashMap<Point, Double> evaluatedGraph = simulator.getAgent(i).getEvaluatedGraph();
 
-                    Vector2 vector = new Vector2(point.x - currentPosition.x(), point.y
-                            - currentPosition.y());
-                    double dist = vector.getLength();
-                    double sumDistance = dist + value;
+                double minTotalDistanceToGoal = Double.MAX_VALUE;
+                Vector2 optimalPathDirection = null;
+
+                for (Entry<Point, Double> pointValuePair : evaluatedGraph.entrySet()) {
+                    Point point = pointValuePair.getKey();
+                    double value =  pointValuePair.getValue();
+
+                    Vector2 vector = new Vector2(point.x - currentPosition.x(),
+                                                 point.y - currentPosition.y());
+
+                    double distToCurrentPosition = vector.getLength();
+                    double sumTotalDistToGoal = distToCurrentPosition + value;
+
                     double navigationEps = 0.1;
-
-                    if (dist < navigationEps
-                            && !simulator.getAgent(i)
-                            .getCloseList().contains(point)) {
-                        simulator.getAgent(i).getCloseList()
-                                .add(point);
-
+                    if (distToCurrentPosition < navigationEps  && !simulator.getAgent(i).getCloseList().contains(point)) {
+                        simulator.getAgent(i).getCloseList().add(point);
                     }
 
-                    if (sumDistance < minDistance
-                            && !simulator.getAgent(i)
-                            .getCloseList().contains(point)) {
+                    if (sumTotalDistToGoal < minTotalDistanceToGoal && !simulator.getAgent(i).getCloseList().contains(point)) {
                         boolean obstacleConflict = false;
-                        Point pos = currentPosition.convertToPoint2i();
-                        double eps = Double.MAX_VALUE;
-                        // optimalization for maze
-                        // double eps = 250;
 
                         for (Region region : lessInflatedObstacles) {
-                            if (region.intersectsLine(currentPosition.convertToPoint2i(),
-                                    point)) {
+                            if (region.intersectsLine(currentPosition.convertToPoint2i(), point)) {
                                 obstacleConflict = true;
                                 continue;
                             }
                         }
                         if (!obstacleConflict) {
-                            result = vector;
-                            minDistance = sumDistance;
+                            optimalPathDirection = vector;
+                            minTotalDistanceToGoal = sumTotalDistToGoal;
                         }
                     }
                 }
 
-                if (result != null) {
-                    result = RVOMath.normalize(result);
+                if (optimalPathDirection != null) {
+                    optimalPathDirection = RVOMath.normalize(optimalPathDirection);
                     float maxSpeed = simulator.getAgentMaxSpeed();
 
                     if (distanceToGoal > simulator.timeStep * maxSpeed) {
                         // it will take some time to reach the goal
-                        result = Vector2.scale(maxSpeed, result);
+                        optimalPathDirection = Vector2.scale(maxSpeed, optimalPathDirection);
                     } else {
                         // goal will be reached in the next time step
                         double speed = distanceToGoal/maxSpeed;
-                        result = Vector2.scale((float)speed, result);
+                        optimalPathDirection = Vector2.scale((float)speed, optimalPathDirection);
                     }
 
-                    simulator.setAgentPrefVelocity(i, result);
+                    simulator.setAgentPrefVelocity(i, optimalPathDirection);
                 } else {
+                    // Cannot find optimal path to goal for some reason
                     Vector2 toGoalVelocityVector = new Vector2(
                             goals[i].x - currentPosition.x_, goals[i].y - currentPosition.y_);
                     float maxSpeed = simulator.getAgentMaxSpeed();
-                       result = Vector2.scale(maxSpeed, toGoalVelocityVector);
-                    simulator.setAgentPrefVelocity(i, result);
+                    optimalPathDirection = Vector2.scale(maxSpeed, toGoalVelocityVector);
+                    simulator.setAgentPrefVelocity(i, optimalPathDirection);
+                    System.err.println("No path to goal found! Using straight direction to goal...");
                 }
             }
         }
