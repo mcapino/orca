@@ -8,6 +8,7 @@ import java.util.List;
 import tt.euclid2i.EvaluatedTrajectory;
 import tt.euclid2i.Point;
 import tt.euclid2i.discretization.LazyGrid;
+import util.DesiredControl;
 import cz.agents.alite.vis.VisManager;
 
 public class RVOAgent {
@@ -40,12 +41,16 @@ public class RVOAgent {
     public int id_ = 0;
     /** sequence of points that will be used to construct trajectory **/
     public ArrayList<Point> trajectory = new ArrayList<Point>();
-    /** currently not used: grid-graph that is used to find the shortest path from agent's current position to the goal position **/
-    private LazyGrid graph;
+
+    private DesiredControl desiredControl;
+
     /**	vertices of the visibility graph, the values represent the cost of the path from each point to the goal **/
     private HashMap<Point, Double> evaluatedGraph = new HashMap<Point, Double>();
+    /** used during optimal policy computation, not clear what for yet **/
     private ArrayList<Point> closeList = new ArrayList<Point>();
+
     public boolean showVis = true;
+
     // goal used for visualization only
     public Point goal_;
 
@@ -719,17 +724,13 @@ public class RVOAgent {
         VisManager.registerLayer(RVOAgentLayer.create(this));
     }
 
-    public void setGraph(LazyGrid grid) {
-        this.graph = grid;
-    }
-
-    public void setEvaluatedGraph(HashMap<Point, Double> evaluatedGraph) {
-        this.evaluatedGraph = evaluatedGraph;
-    }
-
-    public HashMap<Point, Double> getEvaluatedGraph() {
-        return evaluatedGraph;
-    }
+//    public void setEvaluatedGraph(HashMap<Point, Double> evaluatedGraph) {
+//        this.evaluatedGraph = evaluatedGraph;
+//    }
+//
+//    public HashMap<Point, Double> getEvaluatedGraph() {
+//        return evaluatedGraph;
+//    }
 
     public ArrayList<Point> getCloseList() {
         return this.closeList;

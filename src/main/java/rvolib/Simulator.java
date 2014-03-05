@@ -81,12 +81,13 @@ public class Simulator {
         agent.velocity_ = defaultAgent.velocity_;
 
         agent.id_ = agents.size();
+
         if (showVis )
         	agent.initVisualization();
+
         agents.add(agent);
 
         return agents.size() - 1;
-
     }
 
     public void setAgentDefaults(float neighborDist, int maxNeighbors, float timeHorizon, float timeHorizonObst, float radius, float maxSpeed, Vector2 velocity) {

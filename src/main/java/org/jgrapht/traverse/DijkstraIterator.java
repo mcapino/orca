@@ -23,7 +23,6 @@ public class DijkstraIterator<V, E> extends ORCAClosestFirstIterator<V, E> {
     @Override
     protected void encounterVertex(V vertex, E edge) {
         double shortestPathLength;
-        double heuristicEstimate;
 
         if (edge == null) {
             shortestPathLength = 0; //vertex is a starting vertex

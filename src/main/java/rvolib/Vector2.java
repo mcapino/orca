@@ -1,5 +1,6 @@
 package rvolib;
 
+import tt.euclid2d.Vector;
 import tt.euclid2i.Point;
 
 public class Vector2 {
@@ -37,7 +38,12 @@ public class Vector2 {
         y_ = v.y_;
     }
 
-    public static Vector2 plus(Vector2 lhs, Vector2 rhs) {
+    public Vector2(Vector v) {
+        x_ = (float) v.x;
+        y_ = (float) v.y;
+	}
+
+	public static Vector2 plus(Vector2 lhs, Vector2 rhs) {
         return new Vector2(lhs.x_ + rhs.x_, lhs.y_ + rhs.y_);
     }
 
@@ -66,8 +72,12 @@ public class Vector2 {
         target.y_ = source.y_;
     }
 
-    public Point convertToPoint2i() {
-        return new Point(Math.round(x_), Math.round(y_));
+    public tt.euclid2i.Point toPoint2i() {
+        return new tt.euclid2i.Point(Math.round(x_), Math.round(y_));
+    }
+
+    public tt.euclid2d.Point toPoint2d() {
+        return new tt.euclid2d.Point(x_,y_);
     }
 
     public double getLength() {
