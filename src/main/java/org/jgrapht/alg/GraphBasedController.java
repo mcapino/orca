@@ -27,15 +27,17 @@ public class GraphBasedController implements DesiredControl{
 	private HashMap<Point, Double> nodeValues;
 	private Collection<Region> obstacles;
 	private double vmax;
+	private double bestNodeSearchRadius;
 
 	public GraphBasedController(DirectedGraph<Point, Line> graph,
 			Point goal, Collection<Region> obstacles,
-			double vmax, boolean showVis) {
+			double vmax, double bestNodeSearchRadius, boolean showVis) {
         this.graph = graph;
         this.vmax = vmax;
         this.goal = goal;
         this.nodeValues = evaluateGraph(goal);
         this.obstacles = obstacles;
+        this.bestNodeSearchRadius = bestNodeSearchRadius;
 
         if (showVis) {
             VisManager.registerLayer(VisibilityGraphLayer.create(this));
@@ -94,8 +96,12 @@ public class GraphBasedController implements DesiredControl{
 
 			double distToCurrentPosition = vector.length();
 			double sumTotalDistToGoal = distToCurrentPosition + value;
+			Point currentPos2i = new Point((int)currentPosition.x, (int) currentPosition.y);
 
-			if (sumTotalDistToGoal < minTotalDistanceToGoal & Util.isVisible(new Point((int)currentPosition.x, (int) currentPosition.y), node, obstacles)) {
+			if (sumTotalDistToGoal < minTotalDistanceToGoal
+					&& currentPos2i.distance(node) <= bestNodeSearchRadius
+					&& Util.isVisible(currentPos2i, node, obstacles)
+					) {
 				bestDirection = vector;
 				minTotalDistanceToGoal = sumTotalDistToGoal;
 			}

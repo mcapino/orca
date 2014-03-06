@@ -70,14 +70,7 @@ public class RVOSolver {
 				deconflictionTimeHorizonObstacles, bodyRadius, maxSpeed,
 				initialVelocity);
 
-		// Add obstacles
-		for (Region region : obstacles) {
-			if (!(region instanceof Polygon)) {
-				throw new RuntimeException("Only polygons are supported");
-			}
-			ArrayList<Vector2> obstacle = regionToVectorList((Polygon) region);
-			simulator.addObstacle(obstacle);
-		}
+		simulator.addObstacles(obstacles);
 
 		simulator.processObstacles();
 
@@ -91,6 +84,7 @@ public class RVOSolver {
 			simulator.getAgent(i).goal_ = goals[i];
 		}
 		this.graph = graph;
+
 		this.lessInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius - 1);
 		this.moreInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius);
 	}
@@ -162,7 +156,7 @@ public class RVOSolver {
             Util.addVertexAndConnectToNeighbors(graph, end, 4, lessInflatedObstacles);
 
         	GraphBasedController graphBasedDesiredControl
-        		= new GraphBasedController(graph, goals[i], lessInflatedObstacles, 1.0,false);
+        		= new GraphBasedController(graph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, false);
         	desiredControls[i] = graphBasedDesiredControl;
         }
 	}
@@ -183,7 +177,7 @@ public class RVOSolver {
         	DirectedGraph<Point, Line> visGraph
         		= VisibilityGraph.createVisibilityGraph(starts[i], goals[i], lessInflatedObstacles, moreInflatedObstacles);
         	GraphBasedController visibilityGraphBasedDesiredControl
-        		= new GraphBasedController(visGraph, goals[i], lessInflatedObstacles, 1.0, false);
+        		= new GraphBasedController(visGraph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, false);
         	desiredControls[i] = visibilityGraphBasedDesiredControl;
         }
     }
@@ -254,15 +248,5 @@ public class RVOSolver {
 		return iteration;
 	}
 
-	private ArrayList<Vector2> regionToVectorList(Polygon polygon) {
 
-		Point[] points = polygon.getPoints();
-
-		ArrayList<Vector2> obstacle = new ArrayList<Vector2>();
-
-		for (Point point : points) {
-			obstacle.add(new Vector2(point.x, point.y));
-		}
-		return obstacle;
-	}
 }

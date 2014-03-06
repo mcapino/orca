@@ -55,7 +55,6 @@ public class KdTree {
 
     private RVOAgent[] agents_;
     private AgentTreeNode[] agentTree_;
-
     private ObstacleTreeNode obstacleTree_;
 
     public void buildAgentTree(RVOAgent[] agents) {
@@ -132,7 +131,7 @@ public class KdTree {
         }
     }
 
-    public void buildObstacleTree(RVOObstacle[] obstaclesArg, Simulator simulator) {
+    public void buildObstacleTree(RVOObstacle[] obstaclesArg, ArrayList<RVOObstacle> obstacles2) {
         obstacleTree_ = new ObstacleTreeNode();
 
         ArrayList<RVOObstacle> obstacles = new ArrayList<RVOObstacle>(obstaclesArg.length);
@@ -141,10 +140,10 @@ public class KdTree {
             obstacles.add(obstaclesArg[i]);
         }
 
-        obstacleTree_ = buildObstacleTreeRecursive(obstacles, simulator);
+        obstacleTree_ = buildObstacleTreeRecursive(obstacles, obstacles2);
     }
 
-    ObstacleTreeNode buildObstacleTreeRecursive(ArrayList<RVOObstacle> obstacles, Simulator simulator) {
+    ObstacleTreeNode buildObstacleTreeRecursive(ArrayList<RVOObstacle> obstacles, ArrayList<RVOObstacle> obstacles2) {
         if (obstacles.size() == 0) {
             return null;
         } else {
@@ -236,9 +235,9 @@ public class KdTree {
                         newObstacle.isConvex_ = true;
                         newObstacle.unitDir_ = obstacleJ1.unitDir_;
 
-                        newObstacle.id_ = simulator.obstacles.size();
+                        newObstacle.id_ = obstacles2.size();
 
-                        simulator.obstacles.add(newObstacle);
+                        obstacles2.add(newObstacle);
 
                         obstacleJ1.nextObstacle = newObstacle;
                         obstacleJ2.prevObstacle = newObstacle;
@@ -254,8 +253,8 @@ public class KdTree {
                 }
 
                 node.obstacle = obstacleI1;
-                node.left = buildObstacleTreeRecursive(leftObstacles, simulator);
-                node.right = buildObstacleTreeRecursive(rightObstacles, simulator);
+                node.left = buildObstacleTreeRecursive(leftObstacles, obstacles2);
+                node.right = buildObstacleTreeRecursive(rightObstacles, obstacles2);
                 return node;
             }
         }

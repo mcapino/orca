@@ -1,5 +1,8 @@
 package rvolib;
 
+import javax.vecmath.Tuple2d;
+import javax.vecmath.Tuple2i;
+
 import tt.euclid2d.Vector;
 import tt.euclid2i.Point;
 
@@ -28,9 +31,14 @@ public class Vector2 {
         // TODO Auto-generated constructor stub
     }
 
-    public Vector2(Point point) {
+    public Vector2(Tuple2i point) {
         x_ = point.x;
         y_ = point.y;
+    }
+
+    public Vector2(Tuple2d point) {
+        x_ = (float) point.x;
+        y_ = (float) point.y;
     }
 
     public Vector2(Vector2 v) {
@@ -78,6 +86,10 @@ public class Vector2 {
 
     public tt.euclid2d.Point toPoint2d() {
         return new tt.euclid2d.Point(x_,y_);
+    }
+
+    public tt.euclid2d.Vector toVector2d() {
+        return new tt.euclid2d.Vector(x_,y_);
     }
 
     public double getLength() {

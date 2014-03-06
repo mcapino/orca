@@ -1,6 +1,7 @@
 package rvolib;
 
 import tt.euclid2i.Region;
+import tt.euclid2i.region.Polygon;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -120,45 +121,10 @@ public class Simulator {
         time += timeStep;
     }
 
-    /*
-     * vertices MUST BE ADDED IN CLOCKWISE ORDER
-     */
-    public int addObstacle(ArrayList<Vector2> vertices) {
-        if (vertices.size() < 2) {
-            return -1;
-        }
 
-        int obstacleNo = obstacles.size();
-
-        for (int i = 0; i < vertices.size(); ++i) {
-            RVOObstacle obstacle = new RVOObstacle();
-            obstacle.point_ = vertices.get(i);
-            if (i != 0) {
-                obstacle.prevObstacle = obstacles.get(obstacles.size() - 1);
-                obstacle.prevObstacle.nextObstacle = obstacle;
-            }
-            if (i == vertices.size() - 1) {
-                obstacle.nextObstacle = obstacles.get(obstacleNo);
-                obstacle.nextObstacle.prevObstacle = obstacle;
-            }
-            obstacle.unitDir_ = RVOMath.normalize(Vector2.minus(vertices.get(i == vertices.size() - 1 ? 0 : i + 1), vertices.get(i)));
-
-            if (vertices.size() == 2) {
-                obstacle.isConvex_ = true;
-            } else {
-                obstacle.isConvex_ = (RVOMath.leftOf(vertices.get(i == 0 ? vertices.size() - 1 : i - 1), vertices.get(i), vertices.get(i == vertices.size() - 1 ? 0 : i + 1)) >= 0);
-            }
-
-            obstacle.id_ = obstacles.size();
-
-            obstacles.add(obstacle);
-        }
-
-        return obstacleNo;
-    }
 
     public void processObstacles() {
-        kdTree.buildObstacleTree(obstacles.toArray(new RVOObstacle[0]), this);
+        kdTree.buildObstacleTree(obstacles.toArray(new RVOObstacle[0]), this.obstacles);
     }
 
     public boolean queryVisibility(Vector2 point1, Vector2 point2, float radius) {
@@ -208,6 +174,18 @@ public class Simulator {
 
     public void setShowVis(boolean showVis) {
 		this.showVis = showVis;
+	}
+
+	public void addObstacles(Collection<Region> obstacles2) {
+		// Add obstacles
+		for (Region region : obstacles2) {
+			if (!(region instanceof Polygon)) {
+				throw new RuntimeException("Only polygons are supported");
+			}
+			ArrayList<Vector2> obstacle = RVOUtil.regionToVectorList((Polygon) region);
+			RVOUtil.addObstacle(obstacle, obstacles);
+		}
+
 	}
 
 }
