@@ -42,13 +42,6 @@ public class RVOAgent {
     /** sequence of points that will be used to construct trajectory **/
     public ArrayList<Point> trajectory = new ArrayList<Point>();
 
-    private DesiredControl desiredControl;
-
-    /**	vertices of the visibility graph, the values represent the cost of the path from each point to the goal **/
-    private HashMap<Point, Double> evaluatedGraph = new HashMap<Point, Double>();
-    /** used during optimal policy computation, not clear what for yet **/
-    private ArrayList<Point> closeList = new ArrayList<Point>();
-
     public boolean showVis = true;
 
     // goal used for visualization only
@@ -732,9 +725,6 @@ public class RVOAgent {
 //        return evaluatedGraph;
 //    }
 
-    public ArrayList<Point> getCloseList() {
-        return this.closeList;
-    }
 
     public void clearTrajectory() {
         this.trajectory = new ArrayList<Point>();

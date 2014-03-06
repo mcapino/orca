@@ -101,7 +101,6 @@ public class RVOSolver {
 
 		for (int i = 0; i < simulator.getNumAgents(); i++) {
 			simulator.getAgent(i).clearTrajectory();
-			simulator.getAgent(i).getCloseList().clear();
 		}
 
 		iteration = 0;
