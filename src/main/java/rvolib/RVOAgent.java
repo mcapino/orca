@@ -48,15 +48,16 @@ public class RVOAgent {
     public Point goal_;
 
     public void computeNeighbors(KdTree kdtree) {
-        obstacleNeighbors_.clear();
 
+    	obstacleNeighbors_.clear();
         float rangeSq = RVOMath.sqr(timeHorizonObst_ * maxSpeed_ + radius_);
-        MutableFloat rangeSqMutable = new MutableFloat(rangeSq);
         kdtree.computeObstacleNeighbors(this, rangeSq);
 
         agentNeighbors_.clear();
+
         if (maxNeighbors_ > 0) {
             rangeSq = RVOMath.sqr(neighborDist_);
+            MutableFloat rangeSqMutable = new MutableFloat(rangeSq);
             kdtree.computeAgentNeighbors(this, rangeSqMutable);
         }
     }
@@ -73,10 +74,8 @@ public class RVOAgent {
             RVOObstacle obstacle1 = obstacleNeighbors_.get(i).getValue();
             RVOObstacle obstacle2 = obstacle1.nextObstacle;
 
-            Vector2 relativePosition1 = Vector2.minus(obstacle1.point_,
-                    position_);
-            Vector2 relativePosition2 = Vector2.minus(obstacle2.point_,
-                    position_);
+            Vector2 relativePosition1 = Vector2.minus(obstacle1.point_, position_);
+            Vector2 relativePosition2 = Vector2.minus(obstacle2.point_, position_);
 
             /*
              * Check if velocity obstacle of obstacle is already taken care of
@@ -729,5 +728,12 @@ public class RVOAgent {
     public void clearTrajectory() {
         this.trajectory = new ArrayList<Point>();
     }
+
+	@Override
+	public String toString() {
+		return "RVOAgent [position_=" + position_ + ", radius_=" + radius_
+				+ ", velocity_=" + velocity_ + ", id_=" + id_ + "]";
+	}
+
 
 }

@@ -1,6 +1,7 @@
 package rvolib;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class KdTree {
 
@@ -51,18 +52,21 @@ public class KdTree {
         public ObstacleTreeNode right;
     }
 
-    ;
-
     private RVOAgent[] agents_;
     private AgentTreeNode[] agentTree_;
     private ObstacleTreeNode obstacleTree_;
 
-    public void buildAgentTree(RVOAgent[] agents) {
+    public void clearAgents() {
+    	agents_ = null;
+    }
 
-        if (agents_ == null || agents_.length != agents.length) {
-            agents_ = new RVOAgent[agents.length];
+    public void buildAgentTree(RVOAgent[] newAgents) {
+    	// if inconsistent, rebuild the tree
+    	System.err.println(Arrays.toString(newAgents));
+        if (agents_ == null || agents_.length != newAgents.length) {
+            agents_ = new RVOAgent[newAgents.length];
             for (int i = 0; i < agents_.length; ++i) {
-                agents_[i] = agents[i];
+                agents_[i] = newAgents[i];
             }
 
             agentTree_ = new AgentTreeNode[2 * agents_.length];
@@ -71,6 +75,7 @@ public class KdTree {
             }
         }
 
+        // update existing objects
         if (agents_.length != 0) {
             buildAgentTreeRecursive(0, agents_.length, 0);
         }

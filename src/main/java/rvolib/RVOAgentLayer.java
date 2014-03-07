@@ -27,7 +27,7 @@ import java.util.Map.Entry;
 public class RVOAgentLayer {
 
     public final static int AGENT_FOR_GRID_VIS = -1;
-    private static final boolean SHOW_ORCA_LINES = false;
+    private static final boolean SHOW_ORCA_LINES = true;
     private static final boolean SHOW_CURRENT_TRAJECTORY = true;
 
     public static VisLayer create(final RVOAgent agent) {
