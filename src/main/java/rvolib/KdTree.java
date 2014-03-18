@@ -62,7 +62,6 @@ public class KdTree {
 
     public void buildAgentTree(RVOAgent[] newAgents) {
     	// if inconsistent, rebuild the tree
-    	System.err.println(Arrays.toString(newAgents));
         if (agents_ == null || agents_.length != newAgents.length) {
             agents_ = new RVOAgent[newAgents.length];
             for (int i = 0; i < agents_.length; ++i) {

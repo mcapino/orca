@@ -27,7 +27,7 @@ import java.util.Map.Entry;
 public class RVOAgentLayer {
 
     public final static int AGENT_FOR_GRID_VIS = -1;
-    private static final boolean SHOW_ORCA_LINES = true;
+    private static final boolean SHOW_ORCA_LINES = false;
     private static final boolean SHOW_CURRENT_TRAJECTORY = true;
 
     public static VisLayer create(final RVOAgent agent) {
@@ -206,11 +206,10 @@ public class RVOAgentLayer {
 
                                 Color color = AgentColors
                                         .getColorForAgent(agent.id_);
-                                if (agent.trajectory != null) {
-                                    for (Point trajectoryPoint : agent.trajectory) {
+                                if (agent.timePointTrajectory != null) {
+                                    for (tt.euclidtime3i.Point trajectoryPoint : agent.timePointTrajectory) {
                                         Point3d p = new Point3d(trajectoryPoint.x, trajectoryPoint.y, 0);
-                                        points.add(new StyledPointImpl(p,
-                                                color, 5));
+                                        points.add(new StyledPointImpl(p, color, 5));
                                     }
 
                                 }

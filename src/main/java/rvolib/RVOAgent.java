@@ -8,6 +8,7 @@ import java.util.List;
 import tt.euclid2i.EvaluatedTrajectory;
 import tt.euclid2i.Point;
 import tt.euclid2i.discretization.LazyGrid;
+import tt.euclid2i.trajectory.TimePointArrayTrajectory;
 import util.DesiredControl;
 import cz.agents.alite.vis.VisManager;
 
@@ -39,8 +40,11 @@ public class RVOAgent {
     public float timeHorizonObst_ = 0.0f;
     public Vector2 velocity_;
     public int id_ = 0;
-    /** sequence of points that will be used to construct trajectory **/
-    public ArrayList<Point> trajectory = new ArrayList<Point>();
+
+
+    private float currentTime;
+    /** we record the trajectory of agent as sequence of space-time points **/
+    public ArrayList<tt.euclidtime3i.Point> timePointTrajectory = new ArrayList<tt.euclidtime3i.Point>();
 
     public boolean showVis = true;
 
@@ -511,13 +515,30 @@ public class RVOAgent {
         // System.out.println(velocity_.getLength());
         position_ = Vector2.plus(position_,
                 Vector2.scale(timeStep, velocity_));
-        trajectory.add(new Point(Math.round(position_.x_), Math
-                .round(position_.y_)));
+
+		Point point = new Point(Math.round(position_.x_), Math.round(position_.y_));
+
+        currentTime += timeStep;
+        timePointTrajectory.add(new tt.euclidtime3i.Point(point, (int) currentTime));
         // System.out.println(this.id_+" new position: "+position_.toString());
     }
 
-    public EvaluatedTrajectory getEvaluatedTrajectory(float timeStep, Point goal, int maxTime) {
-        return new RVOTrajectory(trajectory, timeStep, goal, maxTime);
+    public EvaluatedTrajectory getEvaluatedTrajectory(Point goal) {
+
+    	TimePointArrayTrajectory traj
+    		= new TimePointArrayTrajectory(this.timePointTrajectory.toArray(new tt.euclidtime3i.Point[0]), evaluateCost(timePointTrajectory, goal));
+    	return traj;
+    	//return new RVOTrajectory(trajectory, timeStep, goal, maxTime);
+    }
+
+    private double evaluateCost(ArrayList<tt.euclidtime3i.Point> listOfPoints, Point goal) {
+        int timeOutsideGoal = 0;
+        for (int i = 0; i < listOfPoints.size()-1; i++) {
+            if (!listOfPoints.get(i).equals(goal)) {
+                timeOutsideGoal += listOfPoints.get(i+1).getTime() - listOfPoints.get(i).getTime();
+            }
+        }
+        return timeOutsideGoal;
     }
 
     boolean linearProgram1(ArrayList<RVOLine> lines, int lineNo, float radius,
@@ -706,8 +727,7 @@ public class RVOAgent {
                     result = tempResult;
                 }
 
-                distance = RVOMath.det(lines.get(i).direction,
-                        Vector2.minus(lines.get(i).point, result));
+                distance = RVOMath.det(lines.get(i).direction, Vector2.minus(lines.get(i).point, result));
             }
         }
     }
@@ -716,17 +736,10 @@ public class RVOAgent {
         VisManager.registerLayer(RVOAgentLayer.create(this));
     }
 
-//    public void setEvaluatedGraph(HashMap<Point, Double> evaluatedGraph) {
-//        this.evaluatedGraph = evaluatedGraph;
-//    }
-//
-//    public HashMap<Point, Double> getEvaluatedGraph() {
-//        return evaluatedGraph;
-//    }
-
-
     public void clearTrajectory() {
-        this.trajectory = new ArrayList<Point>();
+    	this.currentTime = 0;
+    	this.timePointTrajectory = new ArrayList<tt.euclidtime3i.Point>();
+        this.timePointTrajectory.add(new tt.euclidtime3i.Point(this.position_.toPoint2i(),0));
     }
 
 	@Override

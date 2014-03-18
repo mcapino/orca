@@ -132,8 +132,9 @@ public class RVOSolver {
 
 		for (int i = 0; i < trajs.length; i++) {
 			trajs[i] = simulator.getAgent(i).getEvaluatedTrajectory(
-					simulator.timeStep, goals[i],
-					(int) Math.ceil(iterationLimit * simulator.timeStep));
+					/*simulator.timeStep,*/
+					goals[i]
+					/*(int) Math.ceil(iterationLimit * simulator.timeStep)*/);
 		}
 		if (iteration < iterationLimit && jointCost <= maxJointCost) {
 			// System.out.println("RVO SUCCESS");
