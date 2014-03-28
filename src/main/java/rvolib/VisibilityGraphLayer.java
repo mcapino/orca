@@ -16,7 +16,7 @@ import org.jgrapht.graph.SimpleGraph;
 
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
-import tt.jointeuclid2ni.sipprrts.vis.ColorMap;
+import tt.euclidtime3i.sipprrts.vis.ColorMap;
 
 import javax.vecmath.Point3d;
 import java.awt.*;
