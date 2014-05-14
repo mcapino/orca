@@ -145,36 +145,6 @@ public class SolutionStatistics {
         return quality;
     }
 
-    public static double measureRealObstacleRatio(EarliestArrivalProblem problem) {
-        Random random = new Random(1);
-        long obstaclePoints = 0;
-        long testSize = 100000;
-        for (int i = 0; i < testSize; i++) {
-            int x = (int) Math
-                    .round(problem.getBounds().getCorner1().x
-                            + (random.nextDouble() * (problem.getBounds()
-                            .getCorner2().x - problem.getBounds()
-                            .getCorner1().x)));
-            int y = (int) Math
-                    .round(problem.getBounds().getCorner1().y
-                            + (random.nextDouble() * (problem.getBounds()
-                            .getCorner2().y - problem.getBounds()
-                            .getCorner1().y)));
-            Point p = new Point(x, y);
-            boolean isInsideObstacle = false;
-            for (Region r : problem.getObstacles()) {
-                if (r.isInside(p)) {
-                    isInsideObstacle = true;
-                    break;
-                }
-            }
-            if (isInsideObstacle) {
-                obstaclePoints++;
-            }
-        }
-        return (double) obstaclePoints / testSize;
-    }
-
     public void printSolution() {
         System.out.println(experimentID + ";" + algorithm + ";" + timeOut + ";"
                 + problemObstacleRatio + ";" + seed + ";" + nAgents + ";"

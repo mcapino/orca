@@ -1,6 +1,7 @@
 package rvolib;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class KdTree {
 
@@ -51,19 +52,20 @@ public class KdTree {
         public ObstacleTreeNode right;
     }
 
-    ;
-
     private RVOAgent[] agents_;
     private AgentTreeNode[] agentTree_;
-
     private ObstacleTreeNode obstacleTree_;
 
-    public void buildAgentTree(RVOAgent[] agents) {
+    public void clearAgents() {
+    	agents_ = null;
+    }
 
-        if (agents_ == null || agents_.length != agents.length) {
-            agents_ = new RVOAgent[agents.length];
+    public void buildAgentTree(RVOAgent[] newAgents) {
+    	// if inconsistent, rebuild the tree
+        if (agents_ == null || agents_.length != newAgents.length) {
+            agents_ = new RVOAgent[newAgents.length];
             for (int i = 0; i < agents_.length; ++i) {
-                agents_[i] = agents[i];
+                agents_[i] = newAgents[i];
             }
 
             agentTree_ = new AgentTreeNode[2 * agents_.length];
@@ -72,6 +74,7 @@ public class KdTree {
             }
         }
 
+        // update existing objects
         if (agents_.length != 0) {
             buildAgentTreeRecursive(0, agents_.length, 0);
         }
@@ -132,7 +135,7 @@ public class KdTree {
         }
     }
 
-    public void buildObstacleTree(RVOObstacle[] obstaclesArg, Simulator simulator) {
+    public void buildObstacleTree(RVOObstacle[] obstaclesArg, ArrayList<RVOObstacle> obstacles2) {
         obstacleTree_ = new ObstacleTreeNode();
 
         ArrayList<RVOObstacle> obstacles = new ArrayList<RVOObstacle>(obstaclesArg.length);
@@ -141,10 +144,10 @@ public class KdTree {
             obstacles.add(obstaclesArg[i]);
         }
 
-        obstacleTree_ = buildObstacleTreeRecursive(obstacles, simulator);
+        obstacleTree_ = buildObstacleTreeRecursive(obstacles, obstacles2);
     }
 
-    ObstacleTreeNode buildObstacleTreeRecursive(ArrayList<RVOObstacle> obstacles, Simulator simulator) {
+    ObstacleTreeNode buildObstacleTreeRecursive(ArrayList<RVOObstacle> obstacles, ArrayList<RVOObstacle> obstacles2) {
         if (obstacles.size() == 0) {
             return null;
         } else {
@@ -236,9 +239,9 @@ public class KdTree {
                         newObstacle.isConvex_ = true;
                         newObstacle.unitDir_ = obstacleJ1.unitDir_;
 
-                        newObstacle.id_ = simulator.obstacles_.size();
+                        newObstacle.id_ = obstacles2.size();
 
-                        simulator.obstacles_.add(newObstacle);
+                        obstacles2.add(newObstacle);
 
                         obstacleJ1.nextObstacle = newObstacle;
                         obstacleJ2.prevObstacle = newObstacle;
@@ -254,8 +257,8 @@ public class KdTree {
                 }
 
                 node.obstacle = obstacleI1;
-                node.left = buildObstacleTreeRecursive(leftObstacles, simulator);
-                node.right = buildObstacleTreeRecursive(rightObstacles, simulator);
+                node.left = buildObstacleTreeRecursive(leftObstacles, obstacles2);
+                node.right = buildObstacleTreeRecursive(rightObstacles, obstacles2);
                 return node;
             }
         }

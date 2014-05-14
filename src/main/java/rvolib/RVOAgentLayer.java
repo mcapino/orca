@@ -206,11 +206,10 @@ public class RVOAgentLayer {
 
                                 Color color = AgentColors
                                         .getColorForAgent(agent.id_);
-                                if (agent.trajectory != null) {
-                                    for (Point trajectoryPoint : agent.trajectory) {
+                                if (agent.timePointTrajectory != null) {
+                                    for (tt.euclidtime3i.Point trajectoryPoint : agent.timePointTrajectory) {
                                         Point3d p = new Point3d(trajectoryPoint.x, trajectoryPoint.y, 0);
-                                        points.add(new StyledPointImpl(p,
-                                                color, 5));
+                                        points.add(new StyledPointImpl(p, color, 5));
                                     }
 
                                 }
@@ -223,31 +222,31 @@ public class RVOAgentLayer {
             }
         }
 
-        // draw grid values
-        if (AGENT_FOR_GRID_VIS == agent.id_) {
-            group.addSubLayer(new CommonLayer() {
-
-                @Override
-                public void paint(Graphics2D canvas) {
-                    super.paint(canvas);
-
-                    canvas.setColor(Color.RED);
-                    // Color.getHSBColor((float) i / (float) n, 0.85f, 1.0f);
-
-                    HashMap<Point, Double> map = agent.getEvaluatedGraph();
-                    Iterator<Entry<Point, Double>> it = map.entrySet()
-                            .iterator();
-                    while (it.hasNext()) {
-                        Map.Entry pairs = (Map.Entry) it.next();
-                        Point position = (Point) pairs.getKey();
-
-                        String text = "" + pairs.getValue();
-                        canvas.drawString(text, (int) (Vis.transX(position.x)),
-                                (int) (Vis.transY(position.y)));
-                    }
-                }
-            });
-        }
+//        // draw grid values
+//        if (AGENT_FOR_GRID_VIS == agent.id_) {
+//            group.addSubLayer(new CommonLayer() {
+//
+//                @Override
+//                public void paint(Graphics2D canvas) {
+//                    super.paint(canvas);
+//
+//                    canvas.setColor(Color.RED);
+//                    // Color.getHSBColor((float) i / (float) n, 0.85f, 1.0f);
+//
+//                    HashMap<Point, Double> map = agent.getEvaluatedGraph();
+//                    Iterator<Entry<Point, Double>> it = map.entrySet()
+//                            .iterator();
+//                    while (it.hasNext()) {
+//                        Map.Entry pairs = (Map.Entry) it.next();
+//                        Point position = (Point) pairs.getKey();
+//
+//                        String text = "" + pairs.getValue();
+//                        canvas.drawString(text, (int) (Vis.transX(position.x)),
+//                                (int) (Vis.transY(position.y)));
+//                    }
+//                }
+//            });
+//        }
         return group;
     }
 }

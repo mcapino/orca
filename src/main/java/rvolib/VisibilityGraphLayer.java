@@ -7,13 +7,16 @@ import cz.agents.alite.vis.layer.GroupLayer;
 import cz.agents.alite.vis.layer.VisLayer;
 import cz.agents.alite.vis.layer.terminal.StyledLineLayer;
 
+import org.jgrapht.DirectedGraph;
+import org.jgrapht.Graph;
 import org.jgrapht.WeightedGraph;
-import org.jgrapht.alg.VisibilityGraphPlanner;
+import org.jgrapht.alg.GraphBasedController;
 import org.jgrapht.alg.WeightedLine;
 import org.jgrapht.graph.SimpleGraph;
 
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
+import tt.euclidtime3i.sipprrts.vis.ColorMap;
 
 import javax.vecmath.Point3d;
 import java.awt.*;
@@ -24,26 +27,8 @@ public class VisibilityGraphLayer {
 
     public final static int AGENT_FOR_GRID_VIS = -1;
 
-    public static VisLayer create(final VisibilityGraphPlanner planner) {
+    public static VisLayer create(final GraphBasedController planner) {
         GroupLayer group = GroupLayer.create();
-
-
-/*
-		group.addSubLayer(StyledPointLayer.create(new StyledPointElements() {
-
-			@Override
-			public Iterable<? extends StyledPoint> getPoints() {
-				ArrayList<StyledPoint> points = new ArrayList<StyledPoint>();
-
-				Color color = Color.BLUE;
-
-				Point3d position = new Point3d(agent.position_.x_,
-						agent.position_.y_, 0);
-				points.add(new StyledPointImpl(position, color, 15));
-				return points;
-			}
-
-		}));*/
 
         group.addSubLayer(StyledLineLayer.create(new StyledLineElements() {
 
@@ -51,9 +36,9 @@ public class VisibilityGraphLayer {
             public Iterable<? extends StyledLine> getLines() {
                 ArrayList<StyledLine> lines = new ArrayList<StyledLine>();
 
-                Color color = Color.LIGHT_GRAY;
+                Color color = Color.GREEN;
 
-                WeightedGraph<Point, Line> graph = planner.getGraph();
+                DirectedGraph<Point, Line> graph = planner.getGraph();
                 if (graph != null) {
 	                Set<Line> edges = graph.edgeSet();
 	                for (Line line : edges) {
