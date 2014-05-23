@@ -534,6 +534,8 @@ public class RVOAgent {
     private double evaluateCost(ArrayList<tt.euclidtime3i.Point> listOfPoints, Point goal) {
         int timeOutsideGoal = 0;
         for (int i = 0; i < listOfPoints.size()-1; i++) {
+        	assert listOfPoints.get(i) != null;
+        	
             if (!listOfPoints.get(i).equals(goal)) {
                 timeOutsideGoal += listOfPoints.get(i+1).getTime() - listOfPoints.get(i).getTime();
             }
