@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.math3.analysis.function.Log;
+import org.apache.log4j.Logger;
+
 import tt.euclid2i.EvaluatedTrajectory;
 import tt.euclid2i.Point;
 import tt.euclid2i.discretization.LazyGrid;
@@ -13,7 +16,9 @@ import util.DesiredControl;
 import cz.agents.alite.vis.VisManager;
 
 public class RVOAgent {
-
+	
+	static Logger LOGGER = Logger.getLogger(RVOAgent.class);
+	
     /** probably: agents in the neighborhood **/
     private ArrayList<SimpleEntry<Float, RVOAgent>> agentNeighbors_ = new ArrayList<SimpleEntry<Float, RVOAgent>>();
     /** probably: the maximum number of neighbors the algorithm considers for collision avoidance **/
@@ -22,8 +27,6 @@ public class RVOAgent {
     public float maxSpeed_ = 0.0f;
     /** probably: probably the distance at which are the neighboring agents and obstacles registered **/
     public float neighborDist_ = 0.0f;
-    /** probably: the velocity taken after collision avoidance **/
-    private Vector2 newVelocity_ = new Vector2();
     /** probably: obstacles in the neighborhood **/
     private List<SimpleEntry<Float, RVOObstacle>> obstacleNeighbors_ = new ArrayList<SimpleEntry<Float, RVOObstacle>>();
     /** probably: ORCA lines represent constraints on the linear programming problem that searches for the optimal velocity vector **/
@@ -67,7 +70,7 @@ public class RVOAgent {
     }
 
     /* Search for the best new velocity. */
-    public void computeNewVelocity(float timeStep) {
+    public Vector2 computeNewVelocity(float timeStep) {
         orcaLines_.clear();
 
         float invTimeHorizonObst = 1.0f / timeHorizonObst_;
@@ -448,18 +451,26 @@ public class RVOAgent {
             line.point = Vector2.plus(velocity_, Vector2.scale(0.5f, u));
             orcaLines_.add(line);
         }
+        
+        Vector2 newVelocity = new Vector2();
 
-        int lineFail = linearProgram2(orcaLines_, maxSpeed_, prefVelocity_,
-                false, newVelocity_);
+        int lineFail = linearProgram2(orcaLines_, maxSpeed_, prefVelocity_, false, newVelocity);
 
         if (lineFail < orcaLines_.size()) {
-            linearProgram3(orcaLines_, numObstLines, lineFail, maxSpeed_,
-                    newVelocity_);
+            linearProgram3(orcaLines_, numObstLines, lineFail, maxSpeed_, newVelocity);
         }
+        
+        if (Double.isNaN(newVelocity.x_)) {
+        	LOGGER.warn("Didnt find new velocity. Will halt. ");
+        	return new Vector2(0f,0f);
+        }
+        
+        return newVelocity;
     }
 
     public void setPrefVelocity(Vector2 velocity) {
 //		System.out.println("pref velocity: " + velocity);
+        assert !Double.isNaN(velocity.x_) && !Double.isNaN(velocity.y_);
         this.prefVelocity_ = velocity;
     }
 
@@ -509,12 +520,12 @@ public class RVOAgent {
         }
     }
 
-    public void update(float timeStep) {
+    public void update(float timeStep, Vector2 newVelocity) {
 //		System.out.println("new velocity: " + newVelocity_);
-        velocity_ = newVelocity_;
+        velocity_ = newVelocity;
+        
         // System.out.println(velocity_.getLength());
-        position_ = Vector2.plus(position_,
-                Vector2.scale(timeStep, velocity_));
+        position_ = Vector2.plus(position_, Vector2.scale(timeStep, velocity_));
 
 		Point point = new Point(Math.round(position_.x_), Math.round(position_.y_));
 

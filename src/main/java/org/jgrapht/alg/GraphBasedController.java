@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.WeightedGraph;
@@ -21,6 +22,8 @@ import util.DesiredControl;
 import cz.agents.alite.vis.VisManager;
 
 public class GraphBasedController implements DesiredControl{
+	
+	static Logger LOGGER = Logger.getLogger(GraphBasedController.class);
 
 	private Point goal;
     private DirectedGraph<Point, Line>  graph;
@@ -84,7 +87,9 @@ public class GraphBasedController implements DesiredControl{
 
 	@Override
 	public tt.euclid2d.Vector getDesiredControl(tt.euclid2d.Point currentPosition) {
-
+		
+		assert !Double.isNaN(currentPosition.x) && !Double.isNaN(currentPosition.y);
+		
 		double minTotalDistanceToGoal = Double.MAX_VALUE;
 		tt.euclid2d.Vector bestDirection = null;
 
@@ -107,12 +112,17 @@ public class GraphBasedController implements DesiredControl{
 			}
 		}
 
-		if (bestDirection != null) {
+		if (bestDirection != null && !(bestDirection.x == 0 && bestDirection.y == 0)) {
 			bestDirection.normalize();
 			bestDirection.scale(vmax);
+			
+			if (Double.isNaN(bestDirection.x)) {
+				LOGGER.error("NaN");
+			}
+			
 			return bestDirection;
 		} else {
-			System.err.println("Cannot find path to goal. Using straight-line direction to goal");
+			LOGGER.error("Cannot find path to goal from " + currentPosition + ". bestDirection=" + bestDirection + ". Using straight-line direction to goal");
 			tt.euclid2d.Vector vector = new tt.euclid2d.Vector(goal.x - currentPosition.x, goal.y - currentPosition.y);
 			vector.normalize();
 			vector.scale(vmax);

@@ -111,11 +111,12 @@ public class Simulator {
 
         for (int i = 0; i < (agents.size()); ++i) {
             agents.get(i).computeNeighbors(kdTree);
-            agents.get(i).computeNewVelocity(timeStep);
+            
         }
 
         for (int i = 0; i < (agents.size()); ++i) {
-            agents.get(i).update(timeStep);
+        	Vector2 newVelocity = agents.get(i).computeNewVelocity(timeStep);
+            agents.get(i).update(timeStep, newVelocity);
         }
 
         time += timeStep;
