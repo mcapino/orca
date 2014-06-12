@@ -43,7 +43,7 @@ public class RVOAgentLayer {
                         super.paint(canvas);
 
                         canvas.setColor(AgentColors.getColorForAgent(agent.id_));
-                        canvas.fillOval(
+                        canvas.drawOval(
                                 Vis.transX(agent.position_.x_ - agent.radius_),
                                 Vis.transY(agent.position_.y_ - agent.radius_),
                                 Vis.transH(agent.radius_ * 2),
@@ -103,7 +103,7 @@ public class RVOAgentLayer {
                 public Iterable<? extends StyledLine> getLines() {
                     ArrayList<StyledLine> lines = new ArrayList<StyledLine>();
 
-                    Color color = Color.BLACK;
+                    Color color = Color.BLUE;
                     if (agent.prefVelocity_ != null) {
                         Vector3d arrowTip = new Vector3d(
                                 agent.prefVelocity_.x_, agent.prefVelocity_.y_,
@@ -129,7 +129,7 @@ public class RVOAgentLayer {
                 public Iterable<? extends StyledLine> getLines() {
                     ArrayList<StyledLine> lines = new ArrayList<StyledLine>();
 
-                    Color color = AgentColors.getColorForAgent(agent.id_);
+                    Color color = Color.RED;
                     if (agent.velocity_ != null) {
                         Vector3d arrowTip = new Vector3d(agent.velocity_.x_,
                                 agent.velocity_.y_, 0);

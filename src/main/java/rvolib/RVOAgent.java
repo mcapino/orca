@@ -53,7 +53,7 @@ public class RVOAgent {
 
     // goal used for visualization only
     public Point goal_;
-
+    
     public void computeNeighbors(KdTree kdtree) {
 
     	obstacleNeighbors_.clear();
@@ -526,29 +526,26 @@ public class RVOAgent {
         
         // System.out.println(velocity_.getLength());
         position_ = Vector2.plus(position_, Vector2.scale(timeStep, velocity_));
-
-		Point point = new Point(Math.round(position_.x_), Math.round(position_.y_));
-
         currentTime += timeStep;
+        
+        // keep track of the trajectory of the agent -- note that here we have discrete points
+        Point point = new Point(Math.round(position_.x_), Math.round(position_.y_));
         timePointTrajectory.add(new tt.euclidtime3i.Point(point, (int) currentTime));
-        // System.out.println(this.id_+" new position: "+position_.toString());
     }
 
     public EvaluatedTrajectory getEvaluatedTrajectory(Point goal) {
-
-    	TimePointArrayTrajectory traj
-    		= new TimePointArrayTrajectory(this.timePointTrajectory.toArray(new tt.euclidtime3i.Point[0]), evaluateCost(timePointTrajectory, goal));
+    	tt.euclidtime3i.Point[] timePointArray = this.timePointTrajectory.toArray(new tt.euclidtime3i.Point[0]);
+    	TimePointArrayTrajectory traj = new TimePointArrayTrajectory(timePointArray, evaluateCost(timePointArray, goal));
     	return traj;
-    	//return new RVOTrajectory(trajectory, timeStep, goal, maxTime);
     }
 
-    private double evaluateCost(ArrayList<tt.euclidtime3i.Point> listOfPoints, Point goal) {
+    public static double evaluateCost(tt.euclidtime3i.Point[] listOfPoints, Point goal) {
         int timeOutsideGoal = 0;
-        for (int i = 0; i < listOfPoints.size()-1; i++) {
-        	assert listOfPoints.get(i) != null;
+        for (int i = 0; i < listOfPoints.length-1; i++) {
+        	assert listOfPoints[i] != null;
         	
-            if (!listOfPoints.get(i).equals(goal)) {
-                timeOutsideGoal += listOfPoints.get(i+1).getTime() - listOfPoints.get(i).getTime();
+            if (!listOfPoints[i].equals(goal)) {
+                timeOutsideGoal += listOfPoints[i+1].getTime() - listOfPoints[i].getTime();
             }
         }
         return timeOutsideGoal;
