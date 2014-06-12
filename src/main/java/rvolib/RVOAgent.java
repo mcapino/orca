@@ -544,7 +544,7 @@ public class RVOAgent {
         for (int i = 0; i < listOfPoints.length-1; i++) {
         	assert listOfPoints[i] != null;
         	
-            if (!listOfPoints[i].equals(goal)) {
+            if (listOfPoints[i].getPosition().distance(goal) > 1) {
                 timeOutsideGoal += listOfPoints[i+1].getTime() - listOfPoints[i].getTime();
             }
         }
