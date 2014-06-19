@@ -10,15 +10,16 @@ import cz.agents.alite.vis.layer.terminal.StyledLineLayer;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.Graph;
 import org.jgrapht.WeightedGraph;
-import org.jgrapht.alg.GraphBasedController;
 import org.jgrapht.alg.WeightedLine;
 import org.jgrapht.graph.SimpleGraph;
 
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclidtime3i.sipprrts.vis.ColorMap;
+import util.GraphBasedOptimalPolicyController;
 
 import javax.vecmath.Point3d;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Set;
@@ -27,7 +28,7 @@ public class VisibilityGraphLayer {
 
     public final static int AGENT_FOR_GRID_VIS = -1;
 
-    public static VisLayer create(final GraphBasedController planner) {
+    public static VisLayer create(final GraphBasedOptimalPolicyController planner) {
         GroupLayer group = GroupLayer.create();
 
         group.addSubLayer(StyledLineLayer.create(new StyledLineElements() {

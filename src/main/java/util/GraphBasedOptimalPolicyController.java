@@ -1,38 +1,51 @@
-package org.jgrapht.alg;
+package util;
 
+import java.awt.Color;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.GraphPath;
-import org.jgrapht.WeightedGraph;
+import org.jgrapht.alg.AStarShortestPathSimple;
+import org.jgrapht.alg.DijkstraShortestPaths;
 import org.jgrapht.util.Goal;
 import org.jgrapht.util.HeuristicToGoal;
 
 import rvolib.VisibilityGraphLayer;
+import tt.euclid2d.Vector;
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclid2i.Region;
-import tt.euclid2d.Vector;
-import tt.euclid2i.discretization.VisibilityGraph;
+import tt.euclid2i.region.Circle;
 import tt.euclid2i.util.Util;
-import util.DesiredControl;
+import tt.euclid2i.vis.PointLayer.PointProvider;
+import tt.euclid2i.vis.RegionsLayer;
+import tt.euclid2i.vis.RegionsLayer.RegionsProvider;
 import cz.agents.alite.vis.VisManager;
 
-public class GraphBasedController implements DesiredControl{
+public class GraphBasedOptimalPolicyController implements DesiredControl{
 	
-	static Logger LOGGER = Logger.getLogger(GraphBasedController.class);
+	static Logger LOGGER = Logger.getLogger(GraphBasedOptimalPolicyController.class);
 
-	private Point goal;
-    private DirectedGraph<Point, Line>  graph;
-	private HashMap<Point, Double> nodeValues;
-	private Collection<Region> obstacles;
-	private double vmax;
-	private double bestNodeSearchRadius;
+	protected Point goal;
+	protected DirectedGraph<Point, Line>  graph;
+	protected HashMap<Point, Double> nodeValues;
+	protected Collection<Region> obstacles;
+	protected double vmax;
+	protected double bestNodeSearchRadius;
+	
+	protected tt.euclid2d.Point lastQueryPosition;
+	protected double lastQueryRadius;
+	protected Collection<Point> lastQueryNodes = new LinkedList<Point>();
+	protected Point lastBestNode;
+	
+	
 
-	public GraphBasedController(DirectedGraph<Point, Line> graph,
+	public GraphBasedOptimalPolicyController(DirectedGraph<Point, Line> graph,
 			Point goal, Collection<Region> obstacles,
 			double vmax, double bestNodeSearchRadius, boolean showVis) {
         this.graph = graph;
@@ -45,6 +58,30 @@ public class GraphBasedController implements DesiredControl{
         if (showVis) {
             VisManager.registerLayer(VisibilityGraphLayer.create(this));
         }
+
+        VisManager.registerLayer(tt.euclid2i.vis.PointLayer.create(new PointProvider() {
+        	
+        	@Override
+        	public Collection<Point> getPoints() {
+        		return lastQueryNodes;
+        	}
+        },Color.RED, 2));
+        
+        VisManager.registerLayer(tt.euclid2i.vis.PointLayer.create(new PointProvider() {
+        	
+        	@Override
+        	public Collection<Point> getPoints() {
+        		return Collections.singleton(lastBestNode);
+        	}
+        },Color.GREEN, 4));
+        
+        VisManager.registerLayer(RegionsLayer.create(new RegionsProvider() {
+			
+			@Override
+			public Collection<? extends Region> getRegions() {
+				return Collections.singleton(new Circle(new Point((int)lastQueryPosition.x, (int)lastQueryPosition.y), (int) lastQueryRadius));
+			}
+		}, Color.RED));
     }
 
     public HashMap<Point, Double> evaluateGraph(Point goal) {
@@ -84,15 +121,24 @@ public class GraphBasedController implements DesiredControl{
     public DirectedGraph<Point, Line>  getGraph() {
         return graph;
     }
+    
+    @Override
+    public tt.euclid2d.Vector getDesiredControl(tt.euclid2d.Point currentPosition) {
+    	return getDesiredControl(currentPosition, bestNodeSearchRadius);
+    }
 
-	@Override
-	public tt.euclid2d.Vector getDesiredControl(tt.euclid2d.Point currentPosition) {
+	public tt.euclid2d.Vector getDesiredControl(tt.euclid2d.Point currentPosition, double bestNodeSearchRadius) {
 		
 		assert !Double.isNaN(currentPosition.x) && !Double.isNaN(currentPosition.y);
+		LOGGER.trace("Finding best direction from node: " + currentPosition);
+		lastQueryNodes.clear();
+		lastQueryPosition = currentPosition;
+		lastQueryRadius = bestNodeSearchRadius;
 		
 		double minTotalDistanceToGoal = Double.MAX_VALUE;
 		tt.euclid2d.Vector bestDirection = null;
-
+		Point bestNode = null;
+		
 		for (Entry<Point, Double> pointValuePair : nodeValues.entrySet()) {
 			Point node = pointValuePair.getKey();
 			double value = pointValuePair.getValue();
@@ -102,17 +148,27 @@ public class GraphBasedController implements DesiredControl{
 			double distToCurrentPosition = vector.length();
 			double sumTotalDistToGoal = distToCurrentPosition + value;
 			Point currentPos2i = new Point((int)currentPosition.x, (int) currentPosition.y);
+			
 
-			if (sumTotalDistToGoal < minTotalDistanceToGoal
-					&& currentPos2i.distance(node) <= bestNodeSearchRadius
-					&& Util.isVisible(currentPos2i, node, obstacles)
-					) {
-				bestDirection = vector;
-				minTotalDistanceToGoal = sumTotalDistToGoal;
+			if (currentPosition.distance(node.toPoint2d()) > 0.1 &&
+				currentPosition.distance(node.toPoint2d()) <= bestNodeSearchRadius
+				) {
+				lastQueryNodes.add(node);
+				
+				if (sumTotalDistToGoal < minTotalDistanceToGoal && Util.isVisible(currentPos2i, node, obstacles)) {
+					LOGGER.trace("  -- Considering node " + node + " with value=" + value + ". Total-value=" + sumTotalDistToGoal);
+					bestDirection = vector;
+					bestNode = node;
+					minTotalDistanceToGoal = sumTotalDistToGoal;
+				}
+				
 			}
+			
+			lastBestNode = bestNode;
 		}
 
 		if (bestDirection != null && !(bestDirection.x == 0 && bestDirection.y == 0)) {
+			LOGGER.trace("Best node: " + bestNode);
 			bestDirection.normalize();
 			bestDirection.scale(vmax);
 			

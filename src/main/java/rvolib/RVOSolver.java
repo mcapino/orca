@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPaths;
-import org.jgrapht.alg.GraphBasedController;
 import org.jgrapht.util.Goal;
 
 import rrt.JointWaypointState;
@@ -23,6 +22,7 @@ import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
 import tt.jointtraj.solver.SearchResult;
 import util.DesiredControl;
+import util.GraphBasedOptimalPolicyController;
 
 public class RVOSolver {
 
@@ -155,8 +155,8 @@ public class RVOSolver {
             Util.addVertexAndConnectToNeighbors(graph, start, 4, lessInflatedObstacles);
             Util.addVertexAndConnectToNeighbors(graph, end, 4, lessInflatedObstacles);
 
-        	GraphBasedController graphBasedDesiredControl
-        		= new GraphBasedController(graph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, false);
+        	GraphBasedOptimalPolicyController graphBasedDesiredControl
+        		= new GraphBasedOptimalPolicyController(graph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, false);
         	desiredControls[i] = graphBasedDesiredControl;
         }
 	}
@@ -176,8 +176,8 @@ public class RVOSolver {
         for (int i = 0; i < simulator.getNumAgents(); i++) {
         	DirectedGraph<Point, Line> visGraph
         		= VisibilityGraph.createVisibilityGraph(starts[i], goals[i], lessInflatedObstacles, moreInflatedObstacles);
-        	GraphBasedController visibilityGraphBasedDesiredControl
-        		= new GraphBasedController(visGraph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, false);
+        	GraphBasedOptimalPolicyController visibilityGraphBasedDesiredControl
+        		= new GraphBasedOptimalPolicyController(visGraph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, false);
         	desiredControls[i] = visibilityGraphBasedDesiredControl;
         }
     }

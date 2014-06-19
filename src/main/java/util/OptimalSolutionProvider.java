@@ -8,7 +8,6 @@ import javax.vecmath.Vector3d;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.WeightedGraph;
-import org.jgrapht.alg.GraphBasedController;
 
 import rvolib.RVOTrajectory;
 import tt.euclid2i.EvaluatedTrajectory;
@@ -112,8 +111,8 @@ public class OptimalSolutionProvider {
 
 		for (int i = 0; i < problem.nAgents(); i++) {
 			DirectedGraph<Point, Line> visGraph = VisibilityGraph.createVisibilityGraph(starts[i], goals[i], lessInflatedObstacles, moreInflatedObstacles);
-        	GraphBasedController visibilityGraphBasedDesiredControl
-        		= new GraphBasedController(visGraph, goals[i], lessInflatedObstacles, 1.0f, Double.MAX_VALUE, true);
+        	GraphBasedOptimalPolicyController visibilityGraphBasedDesiredControl
+        		= new GraphBasedOptimalPolicyController(visGraph, goals[i], lessInflatedObstacles, 1.0f, Double.MAX_VALUE, true);
 			shortestPaths.add(visibilityGraphBasedDesiredControl.getShortestPath(starts[i],	goals[i]));
 		}
 
