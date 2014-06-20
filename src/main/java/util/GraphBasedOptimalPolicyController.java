@@ -38,12 +38,10 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
 	protected double vmax;
 	protected double bestNodeSearchRadius;
 	
-	protected tt.euclid2d.Point lastQueryPosition;
+	protected tt.euclid2d.Point lastQueryPosition = new tt.euclid2d.Point(0,0);
 	protected double lastQueryRadius;
-	protected Collection<Point> lastQueryNodes = new LinkedList<Point>();
+	protected Collection<Point> lastQueryNodes = Collections.synchronizedList(new LinkedList<Point>());
 	protected Point lastBestNode;
-	
-	
 
 	public GraphBasedOptimalPolicyController(DirectedGraph<Point, Line> graph,
 			Point goal, Collection<Region> obstacles,
@@ -63,7 +61,7 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
         	
         	@Override
         	public Collection<Point> getPoints() {
-        		return lastQueryNodes;
+        		return new LinkedList<Point>(lastQueryNodes);
         	}
         },Color.RED, 2));
         
@@ -79,6 +77,7 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
 			
 			@Override
 			public Collection<? extends Region> getRegions() {
+				assert lastQueryPosition != null;
 				return Collections.singleton(new Circle(new Point((int)lastQueryPosition.x, (int)lastQueryPosition.y), (int) lastQueryRadius));
 			}
 		}, Color.RED));
