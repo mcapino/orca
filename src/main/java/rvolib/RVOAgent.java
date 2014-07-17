@@ -53,7 +53,34 @@ public class RVOAgent {
 
     // goal used for visualization only
     public Point goal_;
-    
+
+    public RVOAgent(){
+
+    }
+    public RVOAgent(int id, Vector2 position){
+        this.position_ = position;
+        this.maxNeighbors_ = 10;
+        this.maxSpeed_ = 20;
+        this.neighborDist_ = 100;
+        this.radius_ = 8;
+        this.timeHorizon_ = 1000;
+        this.timeHorizonObst_ = 1000;
+        this.velocity_ = new Vector2(0,0);
+
+        this.id_ = id;
+    }
+    public RVOAgent(int id, Vector2 position, RVOAgent defaultAgent){
+        this.position_ = position;
+        this.maxNeighbors_ = defaultAgent.maxNeighbors_;
+        this.maxSpeed_ = defaultAgent.maxSpeed_;
+        this.neighborDist_ = defaultAgent.neighborDist_;
+        this.radius_ = defaultAgent.radius_;
+        this.timeHorizon_ = defaultAgent.timeHorizon_;
+        this.timeHorizonObst_ = defaultAgent.timeHorizonObst_;
+        this.velocity_ = defaultAgent.velocity_;
+
+        this.id_ = id;
+    }
     public void computeNeighbors(KdTree kdtree) {
 
     	obstacleNeighbors_.clear();
@@ -474,6 +501,9 @@ public class RVOAgent {
         this.prefVelocity_ = velocity;
     }
 
+    public void clearAgentNeighbor(){
+        agentNeighbors_.clear();
+    }
     public void insertAgentNeighbor(RVOAgent agent, MutableFloat rangeSq) {
         if (this != agent) {
             float distSq = RVOMath.absSq(Vector2.minus(position_,
