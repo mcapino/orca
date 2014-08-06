@@ -7,7 +7,7 @@ The code originated as Java port of [RVO2 Library](http://gamma.cs.unc.edu/RVO2/
 
 Authors:
 --------
-The original port of RVO2Lib has been written by Pavel Janovsky (not reflected in the repository history). The authors subsequent changes are tracked properly.
+The original Java port of RVO2Lib has been written by Pavel Janovsky (not reflected in the repository history). The authors subsequent changes are tracked properly.
 
 Maven configuration:
 --------
