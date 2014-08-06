@@ -4,19 +4,61 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>orca</groupId>
+    <groupId>cz.agents.alite</groupId>
     <artifactId>orca</artifactId>
     <version>1.0-SNAPSHOT</version>
-
-    <parent>
-        <groupId>cz.agents</groupId>
-        <artifactId>atgparent</artifactId>
-        <version>1.0-SNAPSHOT</version>
-    </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>2.2.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<phase>package</phase>
+						<inherited>true</inherited>
+					</execution>
+				</executions>
+			</plugin>
+        </plugins>
+    </build>
+    
+    <repositories>
+    	 <repository>
+          <id>central</id>
+          <url>https://repo1.maven.org/maven2</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+        </repository>
+		<repository>
+			<id>atg-repo</id>
+			<name>atg-repo</name>
+			<url>http://jones.felk.cvut.cz/artifactory/repo</url>
+			<snapshots>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+			<releases />
+		</repository>
+	</repositories>
 
     <dependencies>
         <dependency>
@@ -49,11 +91,11 @@
             <version>4.8.2</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>jgrapht-jdk1.6</groupId>
-            <artifactId>jgrapht-jdk1.6</artifactId>
-            <version>0.8.2</version>
-        </dependency>
+		<dependency>
+		    <groupId>org.jgrapht</groupId>
+		    <artifactId>jgrapht-core</artifactId>
+		    <version>0.9.0</version>
+		</dependency>
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
@@ -64,8 +106,20 @@
             <artifactId>commons-io</artifactId>
             <version>1.3.2</version>
         </dependency>
-
-
     </dependencies>
-
+    
+    <distributionManagement>
+        <snapshotRepository>
+            <uniqueVersion>true</uniqueVersion>
+            <id>atg-repo</id>
+            <name>jones.felk.cvut.cz-snapshots</name>
+            <url>http://jones.felk.cvut.cz/artifactory/pub-snapshot-local</url>
+        </snapshotRepository>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>atg-repo</id>
+            <name>jones.felk.cvut.cz-releases</name>
+            <url>http://jones.felk.cvut.cz/artifactory/pub-release-local</url>
+        </repository>
+    </distributionManagement>
 </project>
