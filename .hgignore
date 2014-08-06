@@ -1,7 +1,0 @@
-syntax: regexp
-^target$
-^.settings$
-^.idea$
-
-syntax: glob
-*.iml
