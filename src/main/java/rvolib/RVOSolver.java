@@ -1,23 +1,14 @@
 package rvolib;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map.Entry;
 
 import org.jgrapht.DirectedGraph;
-import org.jgrapht.WeightedGraph;
-import org.jgrapht.alg.DijkstraShortestPaths;
-import org.jgrapht.util.Goal;
 
 import tt.euclid2d.Vector;
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclid2i.Region;
-import tt.euclid2i.discretization.LazyGrid;
 import tt.euclid2i.discretization.VisibilityGraph;
-import tt.euclid2i.region.Polygon;
-import tt.euclid2i.region.Rectangle;
 import tt.euclid2i.util.Util;
 import tt.jointtraj.solver.SearchResult;
 import util.DesiredControl;
