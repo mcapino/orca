@@ -30,7 +30,7 @@ public class RVOAgentLayer {
     private static final boolean SHOW_ORCA_LINES = false;
     private static final boolean SHOW_CURRENT_TRAJECTORY = true;
     
-    private static final double VELOCITY_SCALAR = 10; 
+    private static final double VELOCITY_SCALER = 10; 
 
     public static VisLayer create(final RVOAgent agent) {
         GroupLayer group = GroupLayer.create();
@@ -110,7 +110,7 @@ public class RVOAgentLayer {
                         Vector3d arrowTip = new Vector3d(
                                 agent.prefVelocity_.x_, agent.prefVelocity_.y_,
                                 0);
-                        arrowTip.scale(agent.prefVelocity_.getLength() * VELOCITY_SCALAR);
+                        arrowTip.scale(agent.prefVelocity_.getLength() * VELOCITY_SCALER);
                         Point3d position = new Point3d(agent.position_.x_,
                                 agent.position_.y_, 0);
                         arrowTip.add(position);
@@ -135,7 +135,7 @@ public class RVOAgentLayer {
                     if (agent.velocity_ != null) {
                         Vector3d arrowTip = new Vector3d(agent.velocity_.x_,
                                 agent.velocity_.y_, 0);
-                        arrowTip.scale(agent.velocity_.getLength() * VELOCITY_SCALAR);
+                        arrowTip.scale(agent.velocity_.getLength() * VELOCITY_SCALER);
                         Point3d position = new Point3d(agent.position_.x_,
                                 agent.position_.y_, 0);
                         arrowTip.add(position);

@@ -10,7 +10,6 @@ import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPaths;
 import org.jgrapht.util.Goal;
 
-import rrt.JointWaypointState;
 import tt.euclid2d.Vector;
 import tt.euclid2i.Line;
 import tt.euclid2i.Point;
@@ -227,21 +226,6 @@ public class RVOSolver {
 
 	public static enum outerLoopControl {
 		LAZY_GRID, VISIBILITY_GRAPH
-	}
-
-	/**
-	 * called from RRT algorithm
-	 *
-	 * @param from
-	 * @param to
-	 */
-	public void setupProblem(JointWaypointState from, JointWaypointState to) {
-		goals = new Point[from.nAgents()];
-		for (int i = 0; i < simulator.getNumAgents(); i++) {
-			simulator.getAgent(i).position_ = new Vector2(from.getPosition(i));
-			simulator.getAgent(i).goal_ = to.getPosition(i);
-			goals[i] = to.getPosition(i);
-		}
 	}
 
 	public int getIterations() {
