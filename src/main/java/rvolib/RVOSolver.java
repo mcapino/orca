@@ -186,7 +186,7 @@ public class RVOSolver {
 				Vector desiredDir = new Vector(desiredVelocity);
 				desiredDir.normalize();
 
-				System.out.println("Setting pref. velocity for agent " + i + " to " + desiredVelocity);
+				//System.out.println("Setting pref. velocity for agent " + i + " to " + desiredVelocity);
 
 				// Adjust if the agent is near the goal
 				if (distanceToGoal <= simulator.timeStep * desiredSpeed) {
