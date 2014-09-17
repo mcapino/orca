@@ -39,9 +39,23 @@ public class RVOSolver {
 	Simulator simulator;
 	private Point[] starts;
 	private DirectedGraph<Point, Line> graph;
+	private double bestGraphNodeSearchRadius;
+	
+	public RVOSolver(Point[] starts, Point[] goals, int bodyRadius,
+			DirectedGraph<Point, Line> graph, 
+			Collection<Region> obstacles,
+			float timeStep, float neighborDist,
+			int maxNeighbors, float deconflictionTimeHorizonAgents,
+			float deconflictionTimeHorizonObstacles,
+			float maxSpeed,
+			boolean showProgress) {
+		this(starts, goals, bodyRadius, graph, Double.MAX_VALUE, obstacles, timeStep, neighborDist, maxNeighbors, deconflictionTimeHorizonAgents, deconflictionTimeHorizonObstacles, maxSpeed, showProgress);
+	}
 
 	public RVOSolver(Point[] starts, Point[] goals, int bodyRadius,
-			DirectedGraph<Point, Line> graph, Collection<Region> obstacles,
+			DirectedGraph<Point, Line> graph, 
+			double bestGraphNodeSearchRadius, 
+			Collection<Region> obstacles,
 			float timeStep, float neighborDist,
 			int maxNeighbors, float deconflictionTimeHorizonAgents,
 			float deconflictionTimeHorizonObstacles,
@@ -74,6 +88,7 @@ public class RVOSolver {
 			simulator.getAgent(i).goal_ = goals[i];
 		}
 		this.graph = graph;
+		this.bestGraphNodeSearchRadius = bestGraphNodeSearchRadius;
 
 		this.lessInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius - 1);
 		this.moreInflatedObstacles = Util.inflateRegions(obstacles, bodyRadius);
@@ -146,7 +161,7 @@ public class RVOSolver {
             Util.addVertexAndConnectToNeighbors(graph, end, 4, lessInflatedObstacles);
 
         	GraphBasedOptimalPolicyController graphBasedDesiredControl
-        		= new GraphBasedOptimalPolicyController(graph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, false);
+        		= new GraphBasedOptimalPolicyController(graph, goals[i], lessInflatedObstacles, 1.0, bestGraphNodeSearchRadius, false);
         	desiredControls[i] = graphBasedDesiredControl;
         }
 	}
