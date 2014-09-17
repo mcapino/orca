@@ -141,14 +141,18 @@ public class RVOSolver {
 					goals[i]
 					/*(int) Math.ceil(iterationLimit * simulator.timeStep)*/);
 		}
-		if (iteration < iterationLimit && jointCost <= maxJointCost) {
-			// System.out.println("RVO SUCCESS");
-			return new SearchResult(trajs, true);
+		if (System.nanoTime() < interruptAtNs) {
+			if (iteration < iterationLimit && jointCost <= maxJointCost) {
+				// Success
+				return new SearchResult(trajs, true);
+			} else {
+				// Fail
+				return new SearchResult(null, true);
+			}
 		} else {
-			// System.out.println("RVO FAILURE");
 			return new SearchResult(null, false);
 		}
-	}
+ 	}
 
 	private void createGraphControllers(DirectedGraph<Point, Line> graph) {
 		desiredControls = new DesiredControl[simulator.getNumAgents()];
