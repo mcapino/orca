@@ -177,7 +177,7 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
 			
 			return bestDirection;
 		} else {
-			LOGGER.error("Cannot find path to goal from " + currentPosition + ". bestDirection=" + bestDirection + ". Using straight-line direction to goal");
+			LOGGER.warn("Cannot find path to goal from " + currentPosition + ". bestDirection=" + bestDirection + ". Using straight-line direction to goal");
 			tt.euclid2d.Vector vector = new tt.euclid2d.Vector(goal.x - currentPosition.x, goal.y - currentPosition.y);
 			vector.normalize();
 			vector.scale(vmax);
