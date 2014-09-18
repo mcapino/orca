@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
@@ -21,6 +22,7 @@ import tt.euclid2i.Line;
 import tt.euclid2i.Point;
 import tt.euclid2i.Region;
 import tt.euclid2i.region.Circle;
+import tt.euclid2i.region.Polygon;
 import tt.euclid2i.util.Util;
 import tt.euclid2i.vis.PointLayer.PointProvider;
 import tt.euclid2i.vis.RegionsLayer;
@@ -34,7 +36,7 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
 	protected Point goal;
 	protected DirectedGraph<Point, Line>  graph;
 	protected HashMap<Point, Double> nodeValues;
-	protected Collection<Region> obstacles;
+	protected Collection<tt.euclid2d.region.Region> obstacles;
 	protected double vmax;
 	protected double bestNodeSearchRadius;
 	
@@ -43,6 +45,8 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
 	protected Collection<Point> lastQueryNodes = Collections.synchronizedList(new LinkedList<Point>());
 	protected Point lastBestNode;
 
+	private boolean showVis;
+
 	public GraphBasedOptimalPolicyController(DirectedGraph<Point, Line> graph,
 			Point goal, Collection<Region> obstacles,
 			double vmax, double bestNodeSearchRadius, boolean showVis) {
@@ -50,37 +54,44 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
         this.vmax = vmax;
         this.goal = goal;
         this.nodeValues = evaluateGraph(goal);
-        this.obstacles = obstacles;
+        
+        this.obstacles = new LinkedList<tt.euclid2d.region.Region>();
+        for (Region obstacle2i : obstacles) {
+        	assert obstacle2i instanceof Polygon;
+        	this.obstacles.add(((Polygon)obstacle2i).toPolygon2d());
+        }
+        
         this.bestNodeSearchRadius = bestNodeSearchRadius;
 
+        this.showVis = showVis;
         if (showVis) {
-            VisManager.registerLayer(VisibilityGraphLayer.create(this));
-        }
+            //VisManager.registerLayer(VisibilityGraphLayer.create(this));        
 
-        VisManager.registerLayer(tt.euclid2i.vis.PointLayer.create(new PointProvider() {
-        	
-        	@Override
-        	public Collection<Point> getPoints() {
-        		return new LinkedList<Point>(lastQueryNodes);
-        	}
-        },Color.RED, 2));
-        
-        VisManager.registerLayer(tt.euclid2i.vis.PointLayer.create(new PointProvider() {
-        	
-        	@Override
-        	public Collection<Point> getPoints() {
-        		return Collections.singleton(lastBestNode);
-        	}
-        },Color.GREEN, 4));
-        
-        VisManager.registerLayer(RegionsLayer.create(new RegionsProvider() {
-			
-			@Override
-			public Collection<? extends Region> getRegions() {
-				assert lastQueryPosition != null;
-				return Collections.singleton(new Circle(new Point((int)lastQueryPosition.x, (int)lastQueryPosition.y), (int) lastQueryRadius));
-			}
-		}, Color.RED));
+	        VisManager.registerLayer(tt.euclid2i.vis.PointLayer.create(new PointProvider() {
+	        	
+	        	@Override
+	        	public Collection<Point> getPoints() {
+	        		return new LinkedList<Point>(lastQueryNodes);
+	        	}
+	        },Color.RED, 2));
+	        
+	        VisManager.registerLayer(tt.euclid2i.vis.PointLayer.create(new PointProvider() {
+	        	
+	        	@Override
+	        	public Collection<Point> getPoints() {
+	        		return Collections.singleton(lastBestNode);
+	        	}
+	        },Color.GREEN, 4));
+	        
+	        VisManager.registerLayer(RegionsLayer.create(new RegionsProvider() {
+				
+				@Override
+				public Collection<? extends Region> getRegions() {
+					assert lastQueryPosition != null;
+					return Collections.singleton(new Circle(new Point((int)lastQueryPosition.x, (int)lastQueryPosition.y), (int) lastQueryRadius));
+				}
+			}, Color.RED));
+        }
     }
 
     public HashMap<Point, Double> evaluateGraph(Point goal) {
@@ -137,6 +148,7 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
 		double minTotalDistanceToGoal = Double.MAX_VALUE;
 		tt.euclid2d.Vector bestDirection = null;
 		Point bestNode = null;
+		Map<Point, Double> lastNodesInNeigborhood = new HashMap<>();
 		
 		for (Entry<Point, Double> pointValuePair : nodeValues.entrySet()) {
 			Point node = pointValuePair.getKey();
@@ -146,15 +158,20 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
 
 			double distToCurrentPosition = vector.length();
 			double sumTotalDistToGoal = distToCurrentPosition + value;
-			Point currentPos2i = new Point((int)currentPosition.x, (int) currentPosition.y);
 			
+			tt.euclid2d.Point currentPos2d = new tt.euclid2d.Point(currentPosition.x, currentPosition.y);
 
 			if (currentPosition.distance(node.toPoint2d()) > 0.1 &&
 				currentPosition.distance(node.toPoint2d()) <= bestNodeSearchRadius
 				) {
-				lastQueryNodes.add(node);
 				
-				if (sumTotalDistToGoal < minTotalDistanceToGoal && Util.isVisible(currentPos2i, node, obstacles)) {
+				lastNodesInNeigborhood.put(node, value);
+				
+				if (showVis && tt.euclid2d.util.Util.isVisible(currentPos2d, node.toPoint2d(), obstacles)) {
+					lastQueryNodes.add(node);
+				}
+				
+				if (sumTotalDistToGoal < minTotalDistanceToGoal && tt.euclid2d.util.Util.isVisible(currentPos2d, node.toPoint2d(), obstacles)) {
 					LOGGER.trace("  -- Considering node " + node + " with value=" + value + ". Total-value=" + sumTotalDistToGoal);
 					bestDirection = vector;
 					bestNode = node;
@@ -177,12 +194,12 @@ public class GraphBasedOptimalPolicyController implements DesiredControl{
 			
 			return bestDirection;
 		} else {
-			LOGGER.warn("Cannot find path to goal from " + currentPosition + ". bestDirection=" + bestDirection + ". Using straight-line direction to goal");
+			LOGGER.warn("Cannot find path to goal from " + currentPosition + ". bestDirection=" + bestDirection + ". Using straight-line direction to goal. ");
 			tt.euclid2d.Vector vector = new tt.euclid2d.Vector(goal.x - currentPosition.x, goal.y - currentPosition.y);
 			vector.normalize();
 			vector.scale(vmax);
 			return vector;
 		}
 	}
-
+	
 }

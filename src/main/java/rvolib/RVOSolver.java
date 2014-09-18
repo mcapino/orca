@@ -165,7 +165,7 @@ public class RVOSolver {
             Util.addVertexAndConnectToNeighbors(graph, end, 4, lessInflatedObstacles);
 
         	GraphBasedOptimalPolicyController graphBasedDesiredControl
-        		= new GraphBasedOptimalPolicyController(graph, goals[i], lessInflatedObstacles, 1.0, bestGraphNodeSearchRadius, false);
+        		= new GraphBasedOptimalPolicyController(graph, goals[i], lessInflatedObstacles, 1.0, bestGraphNodeSearchRadius, showProgress);
         	desiredControls[i] = graphBasedDesiredControl;
         }
 	}
@@ -186,7 +186,7 @@ public class RVOSolver {
         	DirectedGraph<Point, Line> visGraph
         		= VisibilityGraph.createVisibilityGraph(starts[i], goals[i], lessInflatedObstacles, moreInflatedObstacles);
         	GraphBasedOptimalPolicyController visibilityGraphBasedDesiredControl
-        		= new GraphBasedOptimalPolicyController(visGraph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, false);
+        		= new GraphBasedOptimalPolicyController(visGraph, goals[i], lessInflatedObstacles, 1.0, Double.MAX_VALUE, showProgress);
         	desiredControls[i] = visibilityGraphBasedDesiredControl;
         }
     }
