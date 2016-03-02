@@ -30,7 +30,7 @@ public class RVOAgentLayer {
     private static final boolean SHOW_ORCA_LINES = false;
     private static final boolean SHOW_CURRENT_TRAJECTORY = true;
     
-    private static final double VELOCITY_SCALER = 10; 
+    private static final double VELOCITY_SCALER = 1000; 
 
     public static VisLayer create(final RVOAgent agent) {
         GroupLayer group = GroupLayer.create();
